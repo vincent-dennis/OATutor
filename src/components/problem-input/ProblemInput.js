@@ -31,10 +31,18 @@ class ProblemInput extends React.Component {
         this.state = {
             value: "",
             isMathFieldFocused: false,
+            pyodideLoaded: false
         };
     }
 
     componentDidMount() {
+        if (this.props.step.problemType === "Code") {
+            pyodideRunner.initialize();
+            pyodideRunner.ready().then(() => {
+                this.setState({ pyodideLoaded: true });
+            })
+        }
+
         document.addEventListener('click', this.handleClickOutside);
 
         console.debug('problem', this.props.step, 'seed', this.props.seed)
@@ -190,8 +198,9 @@ class ProblemInput extends React.Component {
                                     console.log("Buffer:", outputBuffer);
                                     this.props.editInput({ target: { value: outputBuffer.join("\n") } });
                                 }}
+                                disabled={!this.state.pyodideLoaded}
                             >
-                                Run
+                                {this.state.pyodideLoaded ? "Run Code" : "Loading Interpreter..."}
                             </Button>
                         </div>
                         <Divider style={{ margin: "1rem 0" }} />
