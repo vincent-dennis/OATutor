@@ -1,6 +1,4 @@
-import { loadPyodide } from "pyodide";
-
-class Pyodide {
+class PyodideRunner {
     constructor() {
         this._output = console.log;
         this._pyodide = null;
@@ -8,8 +6,7 @@ class Pyodide {
     }
 
     async _initialize() {
-        this._pyodide = await loadPyodide({
-            indexURL: "https://cdn.jsdelivr.net/pyodide/v0.29.0/full/pyodide.js",
+        this._pyodide = await window.loadPyodide({
             stderr: (text) => this._output(text),
             stdout: (text) => this._output(text),
         })
@@ -29,4 +26,4 @@ class Pyodide {
     }
 }
 
-export default new Pyodide();
+export default new PyodideRunner();

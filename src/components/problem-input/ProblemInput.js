@@ -1,6 +1,8 @@
 import React, { createRef } from "react";
 import Grid from "@material-ui/core/Grid";
 import TextField from "@material-ui/core/TextField";
+import Button from "@material-ui/core/Button";
+import Divider from "@material-ui/core/Divider";
 import MultipleChoice from "./MultipleChoice";
 import GridInput from "./GridInput";
 import MatrixInput from "./MatrixInput";
@@ -12,6 +14,7 @@ import { shuffleArray } from "../../util/shuffleArray";
 import { EQUATION_EDITOR_AUTO_COMMANDS, EQUATION_EDITOR_AUTO_OPERATORS, ThemeContext } from "../../config/config";
 import { stagingProp } from "../../util/addStagingProperty";
 import { parseMatrixTex } from "../../util/parseMatrixTex";
+import pyodideRunner from "../../util/pyodideRunner";
 
 class ProblemInput extends React.Component {
     static contextType = ThemeContext;
@@ -145,6 +148,71 @@ class ProblemInput extends React.Component {
                 className={clsx(disableInput && 'disable-interactions')}>
                 <Grid item xs={1} md={problemType === "TextBox" ? 4 : false}/>
                 <Grid item xs={9} md={problemType === "TextBox" ? 3 : 12}>
+                    {(problemType === "Code") && (
+                        <>
+                        <TextField
+                            inputProps={{
+                                "aria-label": "Enter a response to the question above"
+                            }}
+                            label="Input python code"
+                            className={classes.inputField}
+                            variant="outlined"
+                            multiline
+                            minRows={3}
+                            maxRows={10}
+                            InputProps={{
+                                classes: {
+                                    notchedOutline: ((showCorrectness && state.isCorrect !== false && state.usedHints) ? classes.muiUsedHint : null)
+                                }
+                            }}
+                            inputRef={(codeInput) => (this.codeInputRef = codeInput)}
+                        />
+                        <div style={{ marginTop: '1rem' }}>
+                            <Button 
+                                variant="contained"
+                                color="primary"
+                                onClick={async () => {
+                                    console.log("run clicked, codeInputRef=", this.codeInputRef);
+                                    let outputBuffer = [];
+                                    pyodideRunner.setOutput((text) => {
+                                        outputBuffer.push(text);
+                                    })
+                                    const code = this.codeInputRef?.value || "";
+                                    try {
+                                        await pyodideRunner.run(code); 
+                                    } catch (error) {
+                                        if (error.traceback) {
+                                            outputBuffer.push(error.traceback);
+                                        } else {
+                                            outputBuffer.push(`An unknown error occurred: ${error.message}`);
+                                        }
+                                    }
+                                    console.log("Buffer:", outputBuffer);
+                                    this.props.editInput({ target: { value: outputBuffer.join("\n") } });
+                                }}
+                            >
+                                Run
+                            </Button>
+                        </div>
+                        <Divider style={{ margin: "1rem 0" }} />
+                        <TextField
+                            label="Output"
+                            variant="filled"
+                            error={showCorrectness && state.isCorrect === false}
+                            multiline
+                            minRows={3}
+                            maxRows={10}
+                            value={this.props.state.inputVal || ""} // this should reflect what OATutor stores
+                            inputProps={{
+                                readOnly: true,
+                                "aria-label": "Python output",
+                            }}
+                            className={classes.inputField}
+                        />
+                        </>
+                    )}
+
+
                     {(problemType === "TextBox" && this.props.step.answerType !== "string") && (
                         <math-field
                             ref={this.mathFieldRef}
@@ -196,7 +264,7 @@ class ProblemInput extends React.Component {
                         >
                         </textarea>
                     )}
-                                        {(problemType === "MultipleChoice" && keepMCOrder) ? (
+                    {(problemType === "MultipleChoice" && keepMCOrder) ? (
                         <MultipleChoice
                             onChange={(evt) => this.props.editInput(evt)}
                             choices={[...this.props.step.choices].reverse()}
