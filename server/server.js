@@ -53,17 +53,15 @@ app.post("/api/problems", async (req, res) => {
             }
         }
 
-        // STEP ID UNIQUENESS CHECK
-        const stepIds = steps.map(s => s.id);
-
-        // Check duplicates
-        const duplicates = stepIds.filter((id, index) => stepIds.indexOf(id) !== index);
-
-        if (duplicates.length > 0) {
-            return res.status(400).json({
-                error: `Duplicate step IDs found: ${duplicates.join(", ")}`
-            });
+        if (!Array.isArray(steps)) {
+            return res.status(400).json({ error: "Steps must be an array." });
         }
+
+        // Automatically assign step IDs
+        steps = steps.map((step, index) => ({
+            ...step,
+            id: `${id}-s${index + 1}`  // Auto-generated
+        }));
 
 
         // STEP Validate problemType and answerType
