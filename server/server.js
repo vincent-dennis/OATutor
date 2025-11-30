@@ -16,6 +16,24 @@ app.use(fileUpload());
 // Allow connections from React dev server
 app.use(cors());
 
+const bktParamsPath = path.join(
+  __dirname,
+  "..",            // go from server/ -> project root
+  "src",
+  "content-sources",
+  "oatutor",
+  "bkt-params",
+  "defaultBKTParams.json"
+);
+
+const skillModelPath = path.join(
+  __dirname,
+  "..",
+  "src",
+  "content-sources",
+  "oatutor",
+  "skillModel.json"
+);
 
 // ROUTES
 // Route: Create new problems
@@ -64,7 +82,7 @@ app.post("/api/problems", async (req, res) => {
         }));
 
 
-        // STEP Validate problemType and answerType
+        // Validate step problemType and answerType, skills
         const validProblemTypes = ["TextBox", "Code", "MultipleChoice", "DragDrop", "FillBlanks"];
         const validAnswerTypes = ["string", "arithmetic", "numeric"];
         for (const step of steps) {
@@ -86,6 +104,13 @@ app.post("/api/problems", async (req, res) => {
             if (step.problemType !== "TextBox" && step.answerType !== "string") {
                 return res.status(400).json({
                     error: `Step '${step.id}' has problemType '${step.problemType}' but answerType '${step.answerType}' is not allowed. Only 'string' is allowed for non-TextBox steps.`
+                });
+            }
+
+            // 4. Check for non-empty skills
+            if (!Array.isArray(step.skills) || step.skills.length === 0) {
+                return res.status(400).json({
+                error: `Step ${step.id} must include a non-empty "skills" list.`
                 });
             }
         }
@@ -163,6 +188,20 @@ app.post("/api/problems", async (req, res) => {
         fs.mkdirSync(stepsFolderPath, { recursive: true });
 
         console.log("Created steps folder:", stepsFolderPath);
+
+        let bktParams = JSON.parse(fs.readFileSync(bktParamsPath, "utf8"));
+        // Convert skill definitions to a Set for fast lookups
+        const knownSkills = new Set(Object.keys(bktParams));
+        // Track new skills discovered during this request
+        const newSkills = new Set();
+
+        let skillModel = {};
+        try {
+            skillModel = JSON.parse(fs.readFileSync(skillModelPath, "utf8"));
+        } catch (e) {
+            console.log("skillModel.json not found or invalid. Creating a new one.");
+            skillModel = {};
+        }
 
         // Iterate through each step 
         for (const step of steps) {
@@ -251,7 +290,46 @@ app.post("/api/problems", async (req, res) => {
             // Write the DefaultPathway file
             const defaultPathwayPath = path.join(tutoringFolder, `${step.id}DefaultPathway.json`);
             fs.writeFileSync(defaultPathwayPath, JSON.stringify(hints, null, 4));
+
+            // 4. Skill
+            // Add skills for the step into skillModel.json
+            skillModel[step.id] = step.skills;
+            // Track new skills
+            for (const skill of step.skills) {
+                if (!knownSkills.has(skill)) {
+                    newSkills.add(skill);
+                    knownSkills.add(skill);
+                }
+            }
         }
+
+        // Add new skills into defaultBKTParams.json
+        if (newSkills.size > 0) {
+            console.log("Adding new skills to BKT params:", Array.from(newSkills));
+
+            // Add each missing skill to bktParams with default values
+            for (const skill of newSkills) {
+                bktParams[skill] = {
+                    "probMastery": 0.1,
+                    "probTransit": 0.1,
+                    "probSlip": 0.1,
+                    "probGuess": 0.1
+                };
+            }
+
+            // Atomic-ish safe write
+            const tmpPath = bktParamsPath + ".tmp";
+            fs.writeFileSync(tmpPath, JSON.stringify(bktParams, null, 4), "utf8");
+            fs.renameSync(tmpPath, bktParamsPath);
+
+            console.log("BKT Params updated successfully");
+        }
+
+        // Add step skills into skillModel.json
+        const skillModelTemp = skillModelPath + ".tmp";
+        fs.writeFileSync(skillModelTemp, JSON.stringify(skillModel, null, 4), "utf8");
+        fs.renameSync(skillModelTemp, skillModelPath);
+        console.log("skillModel.json updated successfully");
 
 
         // STEP E: Handle uploaded figure files
