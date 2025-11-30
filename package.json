@@ -11,14 +11,21 @@
     "aws-sdk": "^2.1692.0",
     "axios": "^1.4.0",
     "clsx": "~1.1.1",
+    "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
+    "dotenv": "^17.2.3",
     "equation-editor-react": "https://github.com/CAHLR/equation-editor-react-forked/releases/download/v0.0.10/equation-editor-react-0.0.10.tgz",
     "expr-eval": "~2.0.2",
+    "express": "^5.1.0",
+    "express-fileupload": "^1.5.2",
+    "express-rate-limit": "^8.2.1",
     "firebase": "~9.9.1",
+    "helmet": "^8.1.0",
     "http2": "~3.3.7",
     "list-react-files": "~0.2.0",
     "localforage": "~1.10.0",
     "mathlive": "^0.98.3",
+    "multer": "^2.0.2",
     "random-seed": "~0.3.0",
     "react": "~16.14.0",
     "react-cursor-position": "~3.0.3",
@@ -46,7 +53,10 @@
     "test": "react-app-rewired test",
     "pretest": "node src/tools/preprocessProblemPool.js",
     "eject": "react-scripts eject",
-    "fix-lockfile": "npm install --package-lock-only"
+    "fix-lockfile": "npm install --package-lock-only",
+    "server": "node server/server.js",
+    "server:dev": "nodemon --watch server --watch .env --exec \"node server/server.js\"",
+    "dev": "concurrently \"npm run server:dev\" \"npm start\""
   },
   "browserslist": {
     "production": [
@@ -62,9 +72,11 @@
   },
   "devDependencies": {
     "@types/react-resizable": "~1.7.4",
+    "concurrently": "^9.2.1",
     "cross-env": "^7.0.3",
     "gh-pages": "~2.2.0",
     "mathlive": "^0.98.3",
+    "nodemon": "^3.1.11",
     "react-app-rewire-alias": "~1.1.7",
     "react-app-rewired": "~2.2.1",
     "react-window": "^1.8.11"
