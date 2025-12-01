@@ -473,6 +473,31 @@ class App extends React.Component {
                                         )}
                                     />
 
+                                    <Route
+                                        path="/new/problems/:courseNum/:lessonId"
+                                        render={(props) => (
+                                            <Platform
+                                                key={Date.now()}
+                                                saveProgress={() =>
+                                                    this.saveProgress()
+                                                }
+                                                loadBktProgress={
+                                                    this.loadBktProgress
+                                                }
+                                                removeProgress={
+                                                    this.removeProgress
+                                                }
+                                                addProblemCourse={
+                                                    props.match.params.courseNum
+                                                }
+                                                addProblemLesson={
+                                                    props.match.params.lessonId
+                                                }
+                                                {...props}
+                                            />
+                                        )}
+                                    />
+
                                     <Route component={NotFound} />
                                 </Switch>
                             </div>

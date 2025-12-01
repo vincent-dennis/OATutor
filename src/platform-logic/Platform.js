@@ -24,6 +24,7 @@ import { CONTENT_SOURCE } from "@common/global-config";
 import withTranslation from '../util/withTranslation';
 import AddCourseForm from "../components/forms/AddCourseForm.js";
 import AddLessonForm from "../components/forms/AddLessonForm.js";
+import AddProblemForm from "../components/forms/AddProblemForm.js";
 
 let problemPool = require(`@generated/processed-content-pool/${CONTENT_SOURCE}.json`);
 
@@ -86,6 +87,13 @@ class Platform extends React.Component {
             this.state = {
                 currProblem: null,
                 status: "addLesson",
+                seed: seed,
+            };
+        }
+        if (this.props.addProblemCourse != null) {
+            this.state = {
+                currProblem: null,
+                status: "addProblem",
                 seed: seed,
             };
         }
@@ -479,6 +487,7 @@ class Platform extends React.Component {
                                     this.state.status !== "lessonSelection" &&
                                     this.state.status !== "addCourse" &&
                                     this.state.status !== "addLesson" &&
+                                    this.state.status !== "addProblem" &&
                                     (this.lesson.showStuMastery == null ||
                                         this.lesson.showStuMastery)
                                         ? this.studentNameDisplay +
@@ -557,6 +566,14 @@ class Platform extends React.Component {
                 {this.state.status === "addLesson" ? (
                     <AddLessonForm 
                         courseNum={this.props.addLesson}
+                    />
+                ) : (
+                    ""
+                )}
+                {this.state.status === "addProblem" ? (
+                    <AddProblemForm 
+                        courseNum={this.props.addProblemCourse}
+                        lessonId={this.props.addProblemLesson}
                     />
                 ) : (
                     ""

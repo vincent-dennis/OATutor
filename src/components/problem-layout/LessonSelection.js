@@ -176,14 +176,27 @@ class LessonSelection extends React.Component {
         </h2>
         <h3 style={{ marginTop: 5 }}>{lesson.topics}</h3>
 
-        <Button
-          variant="contained"
-          color="primary"
-          className={classes.button}
-          onClick={() => this.props.history.push(`/lessons/${lesson.id}`)}
-        >
-          {translate('lessonSelection.onlyselect')}
-        </Button>
+        <Box display="inline-flex" gap={2}>
+            <Button
+                variant="contained"
+                color="primary"
+                className={classes.button}
+                size="small"
+                onClick={() => this.props.history.push(`/lessons/${lesson.id}`)}
+            >
+            {translate('lessonSelection.onlyselect')}
+            </Button>
+
+            <Button
+                variant="contained"
+                color="secondary"
+                className={classes.button}
+                size="small"
+                onClick={() => this.props.history.push(`/new/problems/${this.props.courseNum}/${lesson.id}`)}
+            >
+            Add Problem
+            </Button>
+        </Box>
       </Paper>
     </center>
   </Grid>
