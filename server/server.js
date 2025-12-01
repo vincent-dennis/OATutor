@@ -520,6 +520,45 @@ app.post("/api/lessons", async (req, res) => {
 });
 
 
+// Route: get available skills for adding a new lesson
+app.get("/api/skills/:courseNum", async (req, res) => {
+    try {
+        const courseNum = parseInt(req.params.courseNum, 10);
+
+        // Validate numeric input
+        if (isNaN(courseNum)) {
+            return res.status(400).json({ error: "courseNum must be a valid number." });
+        }
+
+        // Load coursePlans.json
+        const coursePlans = JSON.parse(fs.readFileSync(coursePlansPath, "utf8"));
+
+        // Validate index
+        if (courseNum < 0 || courseNum >= coursePlans.length) {
+            return res.status(400).json({ 
+                error: `courseNum '${courseNum}' is out of range. Valid range is 0 to ${coursePlans.length - 1}.` 
+            });
+        }
+
+        // Load BKT Params
+        const bktParams = JSON.parse(fs.readFileSync(bktParamsPath, "utf8"));
+
+        // Extract skill keys
+        const skills = Object.keys(bktParams);
+
+        return res.json({
+            message: "Skills fetched successfully.",
+            course: coursePlans[courseNum]["courseName"],
+            skills
+        });
+
+    } catch (err) {
+        console.error("Error in GET /api/skills/:courseNum :", err);
+        return res.status(500).json({ error: "Internal server error." });
+    }
+});
+
+
 // Route: re-process problem pool
 app.post("/api/reload-problems", (req, res) => {
     const scriptPath = path.join(

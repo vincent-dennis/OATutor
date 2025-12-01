@@ -23,6 +23,7 @@ import ErrorBoundary from "@components/ErrorBoundary";
 import { CONTENT_SOURCE } from "@common/global-config";
 import withTranslation from '../util/withTranslation';
 import AddCourseForm from "../components/forms/AddCourseForm.js";
+import AddLessonForm from "../components/forms/AddLessonForm.js";
 
 let problemPool = require(`@generated/processed-content-pool/${CONTENT_SOURCE}.json`);
 
@@ -554,11 +555,9 @@ class Platform extends React.Component {
                     ""
                 )}
                 {this.state.status === "addLesson" ? (
-                    <center>
-                        <h2>
-                            Add new lesson
-                        </h2>
-                    </center>
+                    <AddLessonForm 
+                        courseNum={this.props.addLesson}
+                    />
                 ) : (
                     ""
                 )}
