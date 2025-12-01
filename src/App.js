@@ -429,6 +429,50 @@ class App extends React.Component {
                                             />
                                         )}
                                     />
+
+                                    <Route
+                                        exact
+                                        path="/new/courses"
+                                        render={(props) => (
+                                            <Platform
+                                                key={Date.now()}
+                                                saveProgress={() =>
+                                                    this.saveProgress()
+                                                }
+                                                loadBktProgress={
+                                                    this.loadBktProgress
+                                                }
+                                                removeProgress={
+                                                    this.removeProgress
+                                                }
+                                                addCourse={"1"}
+                                                {...props}
+                                            />
+                                        )}
+                                    />
+
+                                    <Route
+                                        path="/new/lessons/:courseNum"
+                                        render={(props) => (
+                                            <Platform
+                                                key={Date.now()}
+                                                saveProgress={() =>
+                                                    this.saveProgress()
+                                                }
+                                                loadBktProgress={
+                                                    this.loadBktProgress
+                                                }
+                                                removeProgress={
+                                                    this.removeProgress
+                                                }
+                                                addLesson={
+                                                    props.match.params.courseNum
+                                                }
+                                                {...props}
+                                            />
+                                        )}
+                                    />
+
                                     <Route component={NotFound} />
                                 </Switch>
                             </div>

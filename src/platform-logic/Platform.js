@@ -22,6 +22,7 @@ import { cleanArray } from "../util/cleanObject";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { CONTENT_SOURCE } from "@common/global-config";
 import withTranslation from '../util/withTranslation';
+import AddCourseForm from "../components/forms/AddCourseForm.js";
 
 let problemPool = require(`@generated/processed-content-pool/${CONTENT_SOURCE}.json`);
 
@@ -73,6 +74,20 @@ class Platform extends React.Component {
         }
 
         this.selectLesson = this.selectLesson.bind(this);
+        if (this.props.addCourse != null) {
+            this.state = {
+                currProblem: null,
+                status: "addCourse",
+                seed: seed,
+            };
+        }
+        if (this.props.addLesson != null) {
+            this.state = {
+                currProblem: null,
+                status: "addLesson",
+                seed: seed,
+            };
+        }
     }
 
     componentDidMount() {
@@ -461,6 +476,8 @@ class Platform extends React.Component {
                                 >
                                     {this.state.status !== "courseSelection" &&
                                     this.state.status !== "lessonSelection" &&
+                                    this.state.status !== "addCourse" &&
+                                    this.state.status !== "addLesson" &&
                                     (this.lesson.showStuMastery == null ||
                                         this.lesson.showStuMastery)
                                         ? this.studentNameDisplay +
@@ -525,6 +542,21 @@ class Platform extends React.Component {
                         <h2>
                             Thank you for learning with {SITE_NAME}. You have
                             mastered all the skills for this session!
+                        </h2>
+                    </center>
+                ) : (
+                    ""
+                )}
+
+                {this.state.status === "addCourse" ? (
+                    <AddCourseForm />
+                ) : (
+                    ""
+                )}
+                {this.state.status === "addLesson" ? (
+                    <center>
+                        <h2>
+                            Add new lesson
                         </h2>
                     </center>
                 ) : (
