@@ -195,12 +195,11 @@ class LessonSelection extends React.Component {
                         </Box>
                     </Grid>
                     <Spacer/>
-                    <Grid container spacing={2}>
-                        <Grid item xs={3} sm={3} md={5} key={1}/>
+                    <Grid container spacing={2} justifyContent="center">
                         {!this.isPrivileged && (
                             <>
                                 {/* Existing reset-progress button */}
-                                <Grid item xs={3} sm={3} md={1} key={2}>
+                                <Grid item xs={12} sm="auto" key={2}>
                                     {this.state.preparedRemoveProgress ? (
                                         <Button
                                             className={classes.button}
@@ -227,7 +226,7 @@ class LessonSelection extends React.Component {
                                 </Grid>
 
                                 {/* Reload Problem Pool button */}
-                                <Grid item xs={3} sm={3} md={1} key={4}>
+                                <Grid item xs={12} sm="auto" key={4}>
                                     <Button
                                         className={classes.button}
                                         style={{ width: "100%" }}
@@ -237,9 +236,32 @@ class LessonSelection extends React.Component {
                                         Reload Problems
                                     </Button>
                                 </Grid>
+
+                                {/* Add course button */}
+                                {selectionMode === "course" ? (
+                                    <Grid item xs={12} sm="auto" key={5}>
+                                        <Button
+                                            className={classes.button}
+                                            style={{ width: "100%" }}
+                                            size="small"
+                                            onClick={() => this.props.history.push(`/new/courses`)}
+                                        >
+                                            Add new course
+                                        </Button>
+                                    </Grid>
+                                ) : <Grid item xs={12} sm="auto" key={5}>
+                                        <Button
+                                            className={classes.button}
+                                            style={{ width: "100%" }}
+                                            size="small"
+                                            onClick={() => this.props.history.push(`/new/lessons/${this.props.courseNum}`)}
+                                        >
+                                            Add new lesson
+                                        </Button>
+                                    </Grid>
+                                }
                             </>
                         )}
-                        <Grid item xs={3} sm={3} md={4} key={3}/>
                     </Grid>
                     <Spacer/>
                 </div>

@@ -451,14 +451,13 @@ app.post("/api/lessons", async (req, res) => {
     try {
         const coursePlans = JSON.parse(fs.readFileSync(coursePlansPath, "utf8"));
         const bktParams = JSON.parse(fs.readFileSync(bktParamsPath, "utf8"));
-        const { courseName, lesson } = req.body;
+        const { courseNum, lesson } = req.body;
 
         // 1. Check course exists
-        const course = coursePlans.find(c => c.courseName === courseName);
-
-        if (!course) {
-            return res.status(400).json({ error: `Course '${courseName}' does not exist.` });
+        if (courseNum < 0 || courseNum >= coursePlans.length) {
+            return res.status(400).json({ error: `No course exists at index ${courseNum}.` });
         }
+        const course = coursePlans[courseNum];
 
         // 2. Verify lesson object structure
         const requiredFields = ["id", "name", "topics", "learningObjectives"];
