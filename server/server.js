@@ -36,6 +36,15 @@ const skillModelPath = path.join(
   "skillModel.json"
 );
 
+const coursePlansPath = path.join(
+    __dirname,
+    "..",
+    "src",
+    "content-sources",
+    "oatutor",
+    "coursePlans.json"
+);
+
 // ROUTES
 // Route: Create new problems
 app.post("/api/problems", async (req, res) => {
@@ -369,6 +378,145 @@ app.post("/api/problems", async (req, res) => {
     } catch (err) {
         console.error("Error handling problem creation:", err);
         return res.status(500).json({ error: "Internal server error." });
+    }
+});
+
+
+// Route: add new course
+app.post("/api/courses", async (req, res) => {
+    try {
+        const { courseName, courseOER = "", courseLicense = "" } = req.body;
+
+        // Validate: courseName is required
+        if (!courseName || courseName.trim() === "") {
+            return res.status(400).json({ error: "courseName is required." });
+        }
+
+        // Path to coursePlans.json
+        const coursePlansPath = path.join(
+            __dirname,
+            "..",
+            "src",
+            "content-sources",
+            "oatutor",
+            "coursePlans.json"
+        );
+
+        // Read existing courses
+        let courses = [];
+        if (fs.existsSync(coursePlansPath)) {
+            const fileContent = fs.readFileSync(coursePlansPath, "utf8");
+            courses = JSON.parse(fileContent);
+        }
+
+        // Verify no existing courseName
+        const exists = courses.some(
+            c => c.courseName.trim().toLowerCase() === courseName.trim().toLowerCase()
+        );
+
+        if (exists) {
+            return res.status(400).json({
+                error: `A course with the name "${courseName}" already exists.`
+            });
+        }
+
+        // Create new course object
+        const newCourse = {
+            courseName,
+            courseOER,
+            courseLicense,
+            lessons: [] // initialize as empty list
+        };
+
+        // Add the new course
+        courses.push(newCourse);
+
+        // Save back to the file
+        fs.writeFileSync(coursePlansPath, JSON.stringify(courses, null, 4));
+
+        return res.json({
+            message: "Course added successfully!",
+            course: newCourse
+        });
+
+    } catch (err) {
+        console.error("Error adding course:", err);
+        return res.status(500).json({ error: "Failed to add course." });
+    }
+});
+
+
+// Route: add new lesson
+app.post("/api/lessons", async (req, res) => {
+    try {
+        const coursePlans = JSON.parse(fs.readFileSync(coursePlansPath, "utf8"));
+        const bktParams = JSON.parse(fs.readFileSync(bktParamsPath, "utf8"));
+        const { courseName, lesson } = req.body;
+
+        // 1. Check course exists
+        const course = coursePlans.find(c => c.courseName === courseName);
+
+        if (!course) {
+            return res.status(400).json({ error: `Course '${courseName}' does not exist.` });
+        }
+
+        // 2. Verify lesson object structure
+        const requiredFields = ["id", "name", "topics", "learningObjectives"];
+        for (const field of requiredFields) {
+            if (!(field in lesson)) {
+                return res.status(400).json({ error: `Missing required field: '${field}'` });
+            }
+        }
+
+        // 3. Ensure no lesson has same id or name
+        const hasConflict = course.lessons.some(
+            l => l.id === lesson.id || l.name.toLowerCase() === lesson.name.toLowerCase()
+        );
+
+        if (hasConflict) {
+            return res.status(400).json({
+                error: `A lesson with id '${lesson.id}' or name '${lesson.name}' already exists in this course.`
+            });
+        }
+
+        // 4. Validate learningObjectives structure
+        const LO = lesson.learningObjectives;
+
+        if (typeof LO !== "object" || Array.isArray(LO)) {
+            return res.status(400).json({
+                error: "'learningObjectives' must be an object mapping skill -> threshold"
+            });
+        }
+
+        for (const [skill, threshold] of Object.entries(LO)) {
+            // 4a: key must exist in BKT params
+            if (!(skill in bktParams)) {
+                return res.status(400).json({
+                    error: `Skill '${skill}' does not exist in defaultBKTParams.json`
+                });
+            }
+
+            // 4b: threshold must be a number between 0 and 1
+            if (typeof threshold !== "number" || threshold < 0 || threshold > 1) {
+                return res.status(400).json({
+                    error: `learningObjectives['${skill}'] must be a number between 0 and 1`
+                });
+            }
+        }
+
+        // 5. Append new lesson
+        course.lessons.push(lesson);
+
+        // 6. Save updated file
+        fs.writeFileSync(coursePlansPath, JSON.stringify(coursePlans, null, 4));
+
+        return res.json({
+            message: "Lesson added successfully.",
+            lesson
+        });
+    } catch (err) {
+        console.error("Error adding lesson:", err);
+        return res.status(500).json({ error: err });
     }
 });
 
