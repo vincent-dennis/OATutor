@@ -4,6 +4,7 @@ const cors = require("cors");        // Allow frontend requests
 const fileUpload = require("express-fileupload"); // For images
 const fs = require("fs");
 const path = require("path");
+const { exec } = require("child_process");
 
 const app = express();
 
@@ -369,6 +370,29 @@ app.post("/api/problems", async (req, res) => {
         console.error("Error handling problem creation:", err);
         return res.status(500).json({ error: "Internal server error." });
     }
+});
+
+
+// Route: re-process problem pool
+app.post("/api/reload-problems", (req, res) => {
+    const scriptPath = path.join(
+        __dirname,
+        "..",
+        "src",
+        "tools",
+        "preprocessProblemPool.js"
+    );
+
+    exec(`node "${scriptPath}"`, (error, stdout, stderr) => {
+        if (error) {
+            console.error("Error running preprocess script:", error);
+            return res.status(500).json({ error: "Failed to reload problems" });
+        }
+
+        return res.json({
+            message: "Problems reloaded successfully"
+        });
+    });
 });
 
 

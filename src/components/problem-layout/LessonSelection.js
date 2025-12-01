@@ -17,6 +17,7 @@ import withTranslation from "../../util/withTranslation.js";
 import Popup from '../Popup/Popup.js';
 import About from '../../pages/Posts/About.js';
 import MenuBookIcon from '@material-ui/icons/MenuBook';
+import { toast } from "react-toastify";
 
 class LessonSelection extends React.Component {
     static contextType = ThemeContext;
@@ -62,6 +63,33 @@ class LessonSelection extends React.Component {
     prepareRemoveProgress = () => {
         this.setState({ preparedRemoveProgress: true });
     }
+
+    reloadProblemPool = async () => {
+        try {
+            console.log("start reloading problem pool...")
+            toast.info("Reloading problem pool... This may take a few minutes, and cause some errors for certain lessons.", {
+                autoClose: false,
+                toastId: "reload-start"
+            });
+
+            const res = await fetch("http://localhost:4000/api/reload-problems", { method: "POST" });
+
+            if (!res.ok) throw new Error("Failed to reload.");
+            console.log("finished reloading problem pool!")
+            toast.dismiss("reload-start");
+            toast.success("Problem pool updated! Reloading in 5 seconds...", {
+                autoClose: 5000
+            });
+            // Wait 5 seconds
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            // Hard reload so the new problem pool JSON is fetched
+            window.location.reload(true);
+        } catch (err) {
+            console.error("Reload failed:", err);
+            alert("Failed to reload problem pool.");
+        }
+    };
+
 
     render() {
         const { translate } = this.props;
@@ -167,17 +195,50 @@ class LessonSelection extends React.Component {
                         </Box>
                     </Grid>
                     <Spacer/>
-                    <Grid container spacing={0}>
+                    <Grid container spacing={2}>
                         <Grid item xs={3} sm={3} md={5} key={1}/>
-                        {!this.isPrivileged && <Grid item xs={6} sm={6} md={2} key={2}>
-                            {this.state.preparedRemoveProgress ?
-                                <Button className={classes.button} style={{ width: "100%" }} size="small"
-                                    onClick={this.removeProgress}
-                                    disabled={this.state.removedProgress}>{this.state.removedProgress ? translate('lessonSelection.reset') : translate('lessonSelection.aresure')}</Button> :
-                                <Button className={classes.button} style={{ width: "100%" }} size="small"
-                                    onClick={this.prepareRemoveProgress}
-                                    disabled={this.state.preparedRemoveProgress}>{translate('lessonSelection.resetprogress')}</Button>}
-                        </Grid>}
+                        {!this.isPrivileged && (
+                            <>
+                                {/* Existing reset-progress button */}
+                                <Grid item xs={3} sm={3} md={1} key={2}>
+                                    {this.state.preparedRemoveProgress ? (
+                                        <Button
+                                            className={classes.button}
+                                            style={{ width: "100%" }}
+                                            size="small"
+                                            onClick={this.removeProgress}
+                                            disabled={this.state.removedProgress}
+                                        >
+                                            {this.state.removedProgress
+                                                ? translate("lessonSelection.reset")
+                                                : translate("lessonSelection.aresure")}
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            className={classes.button}
+                                            style={{ width: "100%" }}
+                                            size="small"
+                                            onClick={this.prepareRemoveProgress}
+                                            disabled={this.state.preparedRemoveProgress}
+                                        >
+                                            {translate("lessonSelection.resetprogress")}
+                                        </Button>
+                                    )}
+                                </Grid>
+
+                                {/* Reload Problem Pool button */}
+                                <Grid item xs={3} sm={3} md={1} key={4}>
+                                    <Button
+                                        className={classes.button}
+                                        style={{ width: "100%" }}
+                                        size="small"
+                                        onClick={this.reloadProblemPool}
+                                    >
+                                        Reload Problems
+                                    </Button>
+                                </Grid>
+                            </>
+                        )}
                         <Grid item xs={3} sm={3} md={4} key={3}/>
                     </Grid>
                     <Spacer/>
