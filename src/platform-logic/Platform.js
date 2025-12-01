@@ -344,9 +344,7 @@ class Platform extends React.Component {
         console.debug(
             `Platform.js: available problems ${problems.length}, completed problems ${this.completedProbs.size}`
         );
-        chosenProblem = context.heuristic(problems, this.completedProbs);
-        console.debug("Platform.js: chosen problem", chosenProblem);
-
+    
         const objectives = Object.keys(this.lesson.learningObjectives);
         console.debug("Platform.js: objectives", objectives);
         let score = objectives.reduce((x, y) => {
@@ -354,6 +352,9 @@ class Platform extends React.Component {
         }, 0);
         score /= objectives.length;
         this.displayMastery(score);
+
+        chosenProblem = context.heuristic(problems, this.completedProbs, score);
+        console.debug("Platform.js: chosen problem", chosenProblem);
         //console.log(Object.keys(context.bktParams).map((skill) => (context.bktParams[skill].probMastery <= this.lesson.learningObjectives[skill])));
 
         // There exists a skill that has not yet been mastered (a True)
@@ -378,7 +379,8 @@ class Platform extends React.Component {
                 this.completedProbs = new Set();
                 chosenProblem = context.heuristic(
                     problems,
-                    this.completedProbs
+                    this.completedProbs,
+                    score
                 );
             }
         }
