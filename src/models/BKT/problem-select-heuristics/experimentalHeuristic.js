@@ -1,6 +1,6 @@
 import {MASTERY_THRESHOLD} from "../../../config/config.js"
 
-function heuristic(problems, completedProbs) {
+function heuristic(problems, completedProbs, lessonMastery) {
 
   var chosenProblem = [];
   for (var problem of problems) {
