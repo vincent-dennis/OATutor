@@ -349,12 +349,14 @@ class ProblemCard extends React.Component {
             answerMade(this.index, knowledgeComponents, false);
         }
 
+        // Only consume the credit if the hint was previously locked (0)
+        // This prevents re-opening a scaffold hint from consuming the credit for the next hint.
+        if (hintsFinished[hintNum] === 0) {
+            this.setState({ canUnlockNext: false });
+        }
+
         // If the user has not opened a scaffold before, mark it as in-progress.
         if (hintsFinished[hintNum] !== 1) {
-            // User is using their "credit" to open this hint. 
-            // Lock the next one until another wrong attempt.
-            this.setState({ canUnlockNext: false });
-
             this.setState(
                 (prevState) => {
                     prevState.hintsFinished[hintNum] =

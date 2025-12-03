@@ -73,6 +73,12 @@ class HintSystem extends React.Component {
         if (hintNum === 0) {
             return false;
         }
+
+        // If the hint is already unlocked (viewed or in-progress), keep it unlocked
+        if (this.props.hintStatus[hintNum] !== 0) {
+            return false;
+        }
+
         var dependencies = this.props.hints[hintNum].dependencies;
         var isSatisfied = dependencies.every(
             (dependency) => this.props.hintStatus[dependency] === 1
