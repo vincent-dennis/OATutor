@@ -146,6 +146,8 @@ class ProblemCard extends React.Component {
             // When we are currently streaming the response from ChatGPT, this variable is `true`
             isGeneratingHint: false, 
             lastAIHintHash: null,
+            // Track if the user has earned the right to unlock the next hint
+            canUnlockNext: false,
         };
 
          // This is used for AI hint generation
@@ -283,6 +285,12 @@ class ProblemCard extends React.Component {
             isCorrect,
             checkMarkOpacity: isCorrect ? "100" : "0",
         });
+
+        // If the answer is incorrect, update state to allow unlocking the next hint
+        if (!isCorrect) {
+            this.setState({ canUnlockNext: true });
+        }
+
         answerMade(this.index, knowledgeComponents, isCorrect);
     };
 
@@ -343,6 +351,10 @@ class ProblemCard extends React.Component {
 
         // If the user has not opened a scaffold before, mark it as in-progress.
         if (hintsFinished[hintNum] !== 1) {
+            // User is using their "credit" to open this hint. 
+            // Lock the next one until another wrong attempt.
+            this.setState({ canUnlockNext: false });
+
             this.setState(
                 (prevState) => {
                     prevState.hintsFinished[hintNum] =
@@ -684,6 +696,8 @@ class ProblemCard extends React.Component {
                                         isIncorrect={this.expandFirstIncorrect}
                                         generateHintFromGPT={this.generateHintFromGPT}
                                         isGeneratingHint={this.state.isGeneratingHint}
+                                        // Pass the unlock status to HintSystem
+                                        canUnlockNext={this.state.canUnlockNext}
                                     />
                                 </ErrorBoundary>
                                 <Spacer />

@@ -77,7 +77,13 @@ class HintSystem extends React.Component {
         var isSatisfied = dependencies.every(
             (dependency) => this.props.hintStatus[dependency] === 1
         );
-        return !isSatisfied;
+        if (!isSatisfied) return true;
+
+        // Check if user has submitted a wrong answer since last hint
+        // If not the first hint, and we haven't unlocked the next hint via a wrong answer, it's locked.
+        if (!this.props.canUnlockNext) return true;
+
+        return false;
     };
 
     
