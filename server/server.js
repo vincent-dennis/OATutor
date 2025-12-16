@@ -344,25 +344,20 @@ app.post("/api/problems", async (req, res) => {
 
         // STEP E: Handle uploaded figure files
         if (req.files && Object.keys(req.files).length > 0) {
-            console.log("Files detected in request:", Object.keys(req.files));
+            const imageArray = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
+            console.log("Files detected in request:", imageArray);
 
             // 1. Create the figures folder
             const figuresFolder = path.join(problemFolderPath, "figures");
             fs.mkdirSync(figuresFolder, { recursive: true });
 
             // 2. Save each figure file
-            for (const fileKey of Object.keys(req.files)) {
-                if (fileKey === "steps") {
-                    console.log("Skipping steps file:", fileKey);
-                    continue;
-                }
-
-                const fileObject = req.files[fileKey];   // the uploaded file
-
-                const savePath = path.join(figuresFolder, fileObject.name);
+            for (let i = 0; i < imageArray.length; i++) {
+                const file = imageArray[i];
+                const savePath = path.join(figuresFolder, file.name);
 
                 // fileObject.mv() moves the file to our desired folder
-                await fileObject.mv(savePath);
+                await file.mv(savePath);
 
                 console.log("  Saved figure:", savePath);
             }
