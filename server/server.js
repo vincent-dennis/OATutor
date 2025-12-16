@@ -446,6 +446,10 @@ app.post("/api/lessons", async (req, res) => {
     try {
         const coursePlans = JSON.parse(fs.readFileSync(coursePlansPath, "utf8"));
         const bktParams = JSON.parse(fs.readFileSync(bktParamsPath, "utf8"));
+        // Convert skill definitions to a Set for fast lookups
+        const knownSkills = new Set(Object.keys(bktParams));
+        // Track new skills discovered during this request
+        const newSkills = new Set();
         const { courseNum, lesson } = req.body;
 
         // 1. Check course exists
@@ -483,19 +487,40 @@ app.post("/api/lessons", async (req, res) => {
         }
 
         for (const [skill, threshold] of Object.entries(LO)) {
-            // 4a: key must exist in BKT params
-            if (!(skill in bktParams)) {
-                return res.status(400).json({
-                    error: `Skill '${skill}' does not exist in defaultBKTParams.json`
-                });
-            }
-
-            // 4b: threshold must be a number between 0 and 1
+            // threshold must be a number between 0 and 1
             if (typeof threshold !== "number" || threshold < 0 || threshold > 1) {
                 return res.status(400).json({
                     error: `learningObjectives['${skill}'] must be a number between 0 and 1`
                 });
             }
+
+            // Track new skills
+            if (!knownSkills.has(skill)) {
+                newSkills.add(skill);
+                knownSkills.add(skill);
+            }
+        }
+
+        // Add new skills into defaultBKTParams.json
+        if (newSkills.size > 0) {
+            console.log("Adding new skills to BKT params:", Array.from(newSkills));
+
+            // Add each missing skill to bktParams with default values
+            for (const skill of newSkills) {
+                bktParams[skill] = {
+                    "probMastery": 0.1,
+                    "probTransit": 0.1,
+                    "probSlip": 0.1,
+                    "probGuess": 0.1
+                };
+            }
+
+            // Atomic-ish safe write
+            const tmpPath = bktParamsPath + ".tmp";
+            fs.writeFileSync(tmpPath, JSON.stringify(bktParams, null, 4), "utf8");
+            fs.renameSync(tmpPath, bktParamsPath);
+
+            console.log("BKT Params updated successfully");
         }
 
         // 5. Append new lesson

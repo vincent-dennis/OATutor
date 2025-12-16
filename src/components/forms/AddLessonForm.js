@@ -5,11 +5,11 @@ import {
     Button,
     Typography,
     Grid,
-    MenuItem,
     Paper,
-    FormControlLabel, 
+    FormControlLabel,
     Checkbox
 } from "@material-ui/core";
+import Autocomplete from "@material-ui/lab/Autocomplete";
 import { toast } from "react-toastify";
 
 const AddLessonForm = ({ courseNum }) => {
@@ -23,12 +23,10 @@ const AddLessonForm = ({ courseNum }) => {
     const [lessonTopics, setLessonTopics] = useState("");
     const [allowRecycle, setAllowRecycle] = useState(false);
 
-
     const [learningObjectives, setLearningObjectives] = useState([
         { skill: "", threshold: "" }
     ]);
 
-    // Fetch Skills + Course Name
     useEffect(() => {
         const loadSkills = async () => {
             try {
@@ -51,7 +49,6 @@ const AddLessonForm = ({ courseNum }) => {
         loadSkills();
     }, [courseNum]);
 
-    // ========== Handle adding new LO row ==========
     const addLearningObjective = () => {
         setLearningObjectives([...learningObjectives, { skill: "", threshold: "" }]);
     };
@@ -61,18 +58,15 @@ const AddLessonForm = ({ courseNum }) => {
         setLearningObjectives(newLO);
     };
 
-    // ========== Handle LO change ==========
     const handleLOChange = (index, field, value) => {
         const updated = [...learningObjectives];
         updated[index][field] = value;
         setLearningObjectives(updated);
     };
 
-    // ---------- Submit ----------
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Build learningObjectives object
         const LOobject = {};
         for (const item of learningObjectives) {
             if (!item.skill) {
@@ -123,7 +117,6 @@ const AddLessonForm = ({ courseNum }) => {
             <form onSubmit={handleSubmit}>
                 <Grid container spacing={2}>
 
-                    {/* Lesson ID */}
                     <Grid item xs={12}>
                         <TextField
                             label="Lesson ID"
@@ -135,7 +128,6 @@ const AddLessonForm = ({ courseNum }) => {
                         />
                     </Grid>
 
-                    {/* Lesson Name */}
                     <Grid item xs={12}>
                         <TextField
                             label="Lesson Name"
@@ -147,7 +139,6 @@ const AddLessonForm = ({ courseNum }) => {
                         />
                     </Grid>
 
-                    {/* Topics */}
                     <Grid item xs={12}>
                         <TextField
                             label="Lesson Topics"
@@ -158,7 +149,6 @@ const AddLessonForm = ({ courseNum }) => {
                         />
                     </Grid>
 
-                    {/* Allow recycle? */}
                     <Grid item xs={12}>
                         <FormControlLabel
                             control={
@@ -172,8 +162,6 @@ const AddLessonForm = ({ courseNum }) => {
                         />
                     </Grid>
 
-
-                    {/* Learning Objectives */}
                     <Grid item xs={12}>
                         <Typography variant="h6">Learning Objectives</Typography>
                     </Grid>
@@ -181,22 +169,26 @@ const AddLessonForm = ({ courseNum }) => {
                     {learningObjectives.map((lo, index) => (
                         <React.Fragment key={index}>
                             <Grid item xs={7}>
-                                <TextField
-                                    select
-                                    label="Skill"
-                                    variant="outlined"
-                                    fullWidth
+                                <Autocomplete
+                                    freeSolo
+                                    options={allSkills}
                                     value={lo.skill}
-                                    onChange={(e) =>
-                                        handleLOChange(index, "skill", e.target.value)
+                                    onChange={(_, newValue) =>
+                                        handleLOChange(index, "skill", newValue || "")
                                     }
-                                >
-                                    {allSkills.map((skill) => (
-                                        <MenuItem key={skill} value={skill}>
-                                            {skill}
-                                        </MenuItem>
-                                    ))}
-                                </TextField>
+                                    onInputChange={(_, newInputValue) =>
+                                        handleLOChange(index, "skill", newInputValue)
+                                    }
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Skill"
+                                            variant="outlined"
+                                            fullWidth
+                                            placeholder="Select or type a skill"
+                                        />
+                                    )}
+                                />
                             </Grid>
 
                             <Grid item xs={3}>
@@ -224,14 +216,12 @@ const AddLessonForm = ({ courseNum }) => {
                         </React.Fragment>
                     ))}
 
-                    {/* Add more LO button */}
                     <Grid item xs={12}>
                         <Button variant="outlined" onClick={addLearningObjective}>
                             Add Another Learning Objective
                         </Button>
                     </Grid>
 
-                    {/* Submit */}
                     <Grid item xs={12}>
                         <Button
                             type="submit"
