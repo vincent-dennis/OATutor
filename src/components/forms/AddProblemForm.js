@@ -283,7 +283,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
         {/* IMAGES ---------------------------------------------------------- */}
         <Box mt={2}>
-            <InputLabel shrink>Images (Max 5, Total 20MB)</InputLabel>
+            <InputLabel shrink>Images (Max 5, Total 20MB). To include in problem body: ##[filename]</InputLabel>
             <input
                 type="file"
                 multiple
