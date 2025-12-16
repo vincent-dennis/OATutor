@@ -7,7 +7,7 @@ function heuristic(problems, completedProbs, lessonMastery) {
     // Already completed this problem or irrelevant (null if not in learning goals)
     if (completedProbs.has(problem.id) || problem.probMastery == null || problem.probMastery >= MASTERY_THRESHOLD) {
       continue;
-    } else if (lessonMastery < 0.6 && problem.steps?.some(step => step.problemType == "Code")) { // if problem contains a "Code" step, then skip if its mastery is < 0.5
+    } else if (lessonMastery < 0.5 && problem.steps?.some(step => step.problemType == "Code")) { // if problem contains a "Code" step, then skip if its mastery is < 0.5
       console.log("skipped Code problem with id:" + problem.id + " at current lesson mastery:" + lessonMastery);
       continue;
     } else if (chosenProblem.length === 0 || chosenProblem[0].probMastery > problem.probMastery) {
