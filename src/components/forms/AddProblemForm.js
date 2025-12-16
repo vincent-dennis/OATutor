@@ -9,7 +9,8 @@ import {
   FormControl,
   InputLabel,
   Checkbox,
-  FormControlLabel
+  FormControlLabel,
+  Chip
 } from "@material-ui/core";
 import { toast } from "react-toastify";
 
@@ -33,8 +34,8 @@ export default function AddProblemForm({ courseNum, lessonId }) {
   });
 
   /** -------------------------------
-   *       GET skills + lesson info
-   *  ------------------------------- */
+   * GET skills + lesson info
+   * ------------------------------- */
   useEffect(() => {
     async function fetchSkills() {
       try {
@@ -56,15 +57,15 @@ export default function AddProblemForm({ courseNum, lessonId }) {
   }, [courseNum, lessonId]);
 
   /** -------------------------------
-   *      onBlur field updater
-   *  ------------------------------- */
+   * onBlur field updater
+   * ------------------------------- */
   const updateField = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
   /** --------------------------------
-   *        Add new step
-   *  -------------------------------- */
+   * Add new step
+   * -------------------------------- */
   const addStep = () => {
     setForm(prev => ({
       ...prev,
@@ -72,7 +73,8 @@ export default function AddProblemForm({ courseNum, lessonId }) {
         ...prev.steps,
         {
           skills: [],
-          customSkill: "",
+          customSkills: [], // Changed to array for multiple skills
+          tempCustomSkill: "", // Temporary holder for input
           stepAnswer: [""],
           problemType: "",
           stepTitle: "",
@@ -92,9 +94,34 @@ export default function AddProblemForm({ courseNum, lessonId }) {
     });
   };
 
+  // Helper: Add custom skill to step
+  const addCustomSkill = (stepIndex) => {
+    setForm(prev => {
+      const updated = [...prev.steps];
+      const val = updated[stepIndex].tempCustomSkill;
+      if (val && val.trim() !== "") {
+        updated[stepIndex].customSkills = [
+          ...(updated[stepIndex].customSkills || []),
+          val.trim()
+        ];
+        updated[stepIndex].tempCustomSkill = "";
+      }
+      return { ...prev, steps: updated };
+    });
+  };
+
+  // Helper: Remove custom skill from step
+  const deleteCustomSkill = (stepIndex, skillIndex) => {
+    setForm(prev => {
+      const updated = [...prev.steps];
+      updated[stepIndex].customSkills.splice(skillIndex, 1);
+      return { ...prev, steps: updated };
+    });
+  };
+
   /** --------------------------------
-   *        Add new hint to a step
-   *  -------------------------------- */
+   * Add new hint to a step
+   * -------------------------------- */
   const addHint = (stepIndex, type) => {
     const newHint =
       type === "hint"
@@ -128,16 +155,16 @@ export default function AddProblemForm({ courseNum, lessonId }) {
   };
 
   /** --------------------------------
-   *        FILE UPLOAD handler
-   *  -------------------------------- */
+   * FILE UPLOAD handler
+   * -------------------------------- */
   const handleFileUpload = e => {
     const files = Array.from(e.target.files);
     setForm(prev => ({ ...prev, images: files }));
   };
 
   /** --------------------------------
-   *        SUBMIT: POST multipart
-   *  -------------------------------- */
+   * SUBMIT: POST multipart
+   * -------------------------------- */
   const submitForm = async e => {
     e.preventDefault();
 
@@ -153,7 +180,13 @@ export default function AddProblemForm({ courseNum, lessonId }) {
         fd.append("images", img);
       }
 
-      fd.append("steps", JSON.stringify(form.steps));
+      // Clean steps to remove temporary UI fields like tempCustomSkill
+      const cleanedSteps = form.steps.map(s => {
+        const { tempCustomSkill, ...rest } = s;
+        return rest;
+      });
+
+      fd.append("steps", JSON.stringify(cleanedSteps));
 
       if (form.steps == "") {
         toast.error("Add at least one step.");
@@ -182,8 +215,8 @@ export default function AddProblemForm({ courseNum, lessonId }) {
   if (loading) return <h3>Loading...</h3>;
 
   /** --------------------------------
-   *       RENDER COMPONENT
-   *  -------------------------------- */
+   * RENDER COMPONENT
+   * -------------------------------- */
   return (
     <Paper style={{ padding: 20 }}>
       <h2>
@@ -257,7 +290,6 @@ export default function AddProblemForm({ courseNum, lessonId }) {
               fullWidth
               margin="normal"
               multiline
-              rows={2}
               defaultValue={step.stepBody}
               onBlur={e => updateStep(i, "stepBody", e.target.value)}
             />
@@ -277,13 +309,41 @@ export default function AddProblemForm({ courseNum, lessonId }) {
             </FormControl>
 
             {/* ADD CUSTOM SKILL */}
-            <TextField
-              label="Add Custom Skill"
-              fullWidth
-              margin="normal"
-              defaultValue={step.customSkill}
-              onBlur={e => updateStep(i, "customSkill", e.target.value)}
-            />
+            <Box display="flex" alignItems="center" mt={2}>
+              <TextField
+                label="Add Custom Skill"
+                fullWidth
+                value={step.tempCustomSkill || ""}
+                onChange={e => updateStep(i, "tempCustomSkill", e.target.value)}
+                onKeyPress={e => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addCustomSkill(i);
+                  }
+                }}
+              />
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => addCustomSkill(i)}
+                style={{ marginLeft: 10 }}
+              >
+                Add
+              </Button>
+            </Box>
+
+            {/* Display Added Custom Skills */}
+            <Box mt={1} display="flex" flexWrap="wrap">
+              {step.customSkills &&
+                step.customSkills.map((skill, sIdx) => (
+                  <Chip
+                    key={sIdx}
+                    label={skill}
+                    onDelete={() => deleteCustomSkill(i, sIdx)}
+                    style={{ margin: 5 }}
+                  />
+                ))}
+            </Box>
 
             {/* Problem Type */}
             <FormControl fullWidth margin="normal">
@@ -356,7 +416,6 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                   fullWidth
                   margin="normal"
                   multiline
-                  rows={2}
                   defaultValue={hint.text}
                   onBlur={e => updateHint(i, h, "text", e.target.value)}
                 />
