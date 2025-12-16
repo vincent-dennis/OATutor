@@ -159,6 +159,26 @@ export default function AddProblemForm({ courseNum, lessonId }) {
    * -------------------------------- */
   const handleFileUpload = e => {
     const files = Array.from(e.target.files);
+
+    // Limit check: Max 5 files
+    if (files.length > 5) {
+        toast.error("You can only upload a maximum of 5 images.");
+        e.target.value = ""; // Reset the input
+        setForm(prev => ({ ...prev, images: [] }));
+        return;
+    }
+
+    // Size check: Max 20MB total
+    const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+    const MAX_SIZE = 20 * 1024 * 1024; // 20MB in bytes
+
+    if (totalSize > MAX_SIZE) {
+        toast.error("Total file size exceeds the 20MB limit.");
+        e.target.value = ""; // Reset the input
+        setForm(prev => ({ ...prev, images: [] }));
+        return;
+    }
+
     setForm(prev => ({ ...prev, images: files }));
   };
 
@@ -181,9 +201,18 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       }
 
       // Clean steps to remove temporary UI fields like tempCustomSkill
+      // AND merge customSkills into the main skills array for the backend
       const cleanedSteps = form.steps.map(s => {
-        const { tempCustomSkill, ...rest } = s;
-        return rest;
+        const { tempCustomSkill, customSkills, skills, ...rest } = s;
+
+        // Merge existing skills (from dropdown) and custom skills (from text input)
+        // into a single list as expected by the backend.
+        const mergedSkills = [...(skills || []), ...(customSkills || [])];
+
+        return {
+            ...rest,
+            skills: mergedSkills
+        };
       });
 
       fd.append("steps", JSON.stringify(cleanedSteps));
@@ -254,12 +283,25 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
         {/* IMAGES ---------------------------------------------------------- */}
         <Box mt={2}>
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleFileUpload}
-          />
+            <InputLabel shrink>Images (Max 5, Total 20MB)</InputLabel>
+            <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleFileUpload}
+                style={{ marginTop: 8 }}
+            />
+            {/* Display uploaded file names */}
+            <Box mt={1} display="flex" flexWrap="wrap">
+                {form.images.map((file, i) => (
+                    <Chip
+                        key={i}
+                        label={file.name}
+                        variant="outlined"
+                        style={{ margin: 4 }}
+                    />
+                ))}
+            </Box>
         </Box>
 
         {/* STEPS ------------------------------------------------------------ */}
