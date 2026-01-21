@@ -94,7 +94,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       if (field === "problemType") {
         updated[index][field] = value;
 
-        // MODIFIED: choices required for MultipleChoice and DragDrop + initialize arrays
+        // choices required for MultipleChoice and DragDrop + initialize arrays
         if (
           (value === "MultipleChoice" || value === "DragDrop") &&
           (!Array.isArray(updated[index].choices) || updated[index].choices.length === 0)
@@ -102,7 +102,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           updated[index].choices = [""];
         }
 
-        // MODIFIED: DragDrop requires stepAnswer length === choices length
+        // DragDrop requires stepAnswer length === choices length
         if (value === "DragDrop") {
           const choicesLen = Array.isArray(updated[index].choices) ? updated[index].choices.length : 0;
           const ans = Array.isArray(updated[index].stepAnswer) ? [...updated[index].stepAnswer] : [];
@@ -154,7 +154,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       current.push("");
       updated[stepIndex].choices = current;
 
-      // MODIFIED: DragDrop sync stepAnswer length with choices
+      // DragDrop sync stepAnswer length with choices
       if (updated[stepIndex].problemType === "DragDrop") {
         const ans = Array.isArray(updated[stepIndex].stepAnswer) ? [...updated[stepIndex].stepAnswer] : [];
         ans.push("");
@@ -181,7 +181,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       const current = Array.isArray(updated[stepIndex].choices) ? [...updated[stepIndex].choices] : [];
       current.splice(choiceIndex, 1);
 
-      // MODIFIED: keep at least one row when MultipleChoice or DragDrop
+      // keep at least one row when MultipleChoice or DragDrop
       if (
         (updated[stepIndex].problemType === "MultipleChoice" || updated[stepIndex].problemType === "DragDrop") &&
         current.length === 0
@@ -191,7 +191,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
         updated[stepIndex].choices = current;
       }
 
-      // MODIFIED: DragDrop sync stepAnswer length with choices (and keep at least one)
+      // DragDrop sync stepAnswer length with choices (and keep at least one)
       if (updated[stepIndex].problemType === "DragDrop") {
         const ans = Array.isArray(updated[stepIndex].stepAnswer) ? [...updated[stepIndex].stepAnswer] : [];
         ans.splice(choiceIndex, 1);
@@ -209,7 +209,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
     });
   };
 
-  // MODIFIED: stepAnswer helpers to allow multiple answers (non-DragDrop)
+  // stepAnswer helpers to allow multiple answers (non-DragDrop)
   const addStepAnswer = (stepIndex) => {
     setForm(prev => {
       const updated = [...prev.steps];
@@ -256,7 +256,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
             problemType: "",
             answerType: "",
             hintAnswer: [""],
-            choices: [], // MODIFIED: scaffold supports choices for MultipleChoice/DragDrop
+            choices: [], // scaffold supports choices for MultipleChoice/DragDrop
             title: "",
             text: ""
           };
@@ -273,7 +273,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       const updated = [...prev.steps];
       const hint = updated[stepIndex].hints[hintIndex];
 
-      // MODIFIED: scaffold problemType change initializes choices + sync DragDrop answers
+      // scaffold problemType change initializes choices + sync DragDrop answers
       if (hint.type === "scaffold" && field === "problemType") {
         hint[field] = value;
 
@@ -303,7 +303,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
     });
   };
 
-  // MODIFIED: scaffold choices helpers (MultipleChoice/DragDrop)
+  // scaffold choices helpers (MultipleChoice/DragDrop)
   const addHintChoice = (stepIndex, hintIndex) => {
     setForm(prev => {
       const updated = [...prev.steps];
@@ -363,7 +363,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
     });
   };
 
-  // MODIFIED: scaffold hintAnswer helpers (allow multiple; non-DragDrop)
+  // scaffold hintAnswer helpers (allow multiple; non-DragDrop)
   const addHintAnswer = (stepIndex, hintIndex) => {
     setForm(prev => {
       const updated = [...prev.steps];
@@ -435,7 +435,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       for (let i = 0; i < form.steps.length; i++) {
         const s = form.steps[i];
 
-        // MODIFIED: choices required for MultipleChoice and DragDrop; DragDrop also enforces answer length
+        // choices required for MultipleChoice and DragDrop; DragDrop also enforces answer length
         if (s.problemType === "MultipleChoice" || s.problemType === "DragDrop") {
           const rawChoices = Array.isArray(s.choices) ? s.choices : (s.choices != null ? [s.choices] : []);
           const choicesTrimmed = rawChoices.map(c => (c == null ? "" : String(c)).trim());
@@ -464,7 +464,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           }
         }
 
-        // MODIFIED: validate scaffold hints with same rules
+        // validate scaffold hints with same rules
         for (let h = 0; h < (s.hints || []).length; h++) {
           const hint = s.hints[h];
           if (hint.type !== "scaffold") continue;
@@ -539,7 +539,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
         const mergedSkills = [...(skills || []), ...(customSkills || [])];
 
-        // MODIFIED: normalize DragDrop stepAnswer length to choices length before submit
+        // normalize DragDrop stepAnswer length to choices length before submit
         if (rest.problemType === "DragDrop") {
           const ch = Array.isArray(rest.choices) ? rest.choices : (rest.choices != null ? [rest.choices] : []);
           const ans = Array.isArray(rest.stepAnswer) ? [...rest.stepAnswer] : (rest.stepAnswer != null ? [rest.stepAnswer] : []);
@@ -651,9 +651,9 @@ export default function AddProblemForm({ courseNum, lessonId }) {
         </Box>
 
         {form.steps.map((step, i) => {
-          const stepAnswers = Array.isArray(step.stepAnswer) ? step.stepAnswer : [step.stepAnswer]; // MODIFIED
-          const isChoiceType = step.problemType === "MultipleChoice" || step.problemType === "DragDrop"; // MODIFIED
-          const isDragDrop = step.problemType === "DragDrop"; // MODIFIED
+          const stepAnswers = Array.isArray(step.stepAnswer) ? step.stepAnswer : [step.stepAnswer];
+          const isChoiceType = step.problemType === "MultipleChoice" || step.problemType === "DragDrop";
+          const isDragDrop = step.problemType === "DragDrop";
 
           return (
             <Paper key={i} style={{ padding: 15, marginTop: 20 }}>
@@ -744,7 +744,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                 </Select>
               </FormControl>
 
-              {/* MODIFIED: Choices inputs for MultipleChoice and DragDrop; DragDrop shows paired answers */}
+              {/* Choices inputs for MultipleChoice and DragDrop; DragDrop shows paired answers */}
               {isChoiceType && (
                 <Box mt={2}>
                   <InputLabel shrink>Choices</InputLabel>
@@ -802,7 +802,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                 </Select>
               </FormControl>
 
-              {/* MODIFIED: Multiple step answers (non-DragDrop) */}
+              {/* Multiple step answers (non-DragDrop) */}
               {!isDragDrop && (
                 <Box mt={2}>
                   <InputLabel shrink>Step Answers</InputLabel>
@@ -852,9 +852,9 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
               {/* Render hints */}
               {step.hints.map((hint, h) => {
-                const hintAnswers = Array.isArray(hint.hintAnswer) ? hint.hintAnswer : [hint.hintAnswer]; // MODIFIED
-                const hintIsChoiceType = hint.type === "scaffold" && (hint.problemType === "MultipleChoice" || hint.problemType === "DragDrop"); // MODIFIED
-                const hintIsDragDrop = hint.type === "scaffold" && hint.problemType === "DragDrop"; // MODIFIED
+                const hintAnswers = Array.isArray(hint.hintAnswer) ? hint.hintAnswer : [hint.hintAnswer];
+                const hintIsChoiceType = hint.type === "scaffold" && (hint.problemType === "MultipleChoice" || hint.problemType === "DragDrop");
+                const hintIsDragDrop = hint.type === "scaffold" && hint.problemType === "DragDrop";
 
                 return (
                   <Paper key={h} style={{ padding: 10, marginTop: 15 }}>
@@ -909,7 +909,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                           </Select>
                         </FormControl>
 
-                        {/* MODIFIED: scaffold choices for MultipleChoice/DragDrop; DragDrop pairs answers */}
+                        {/* scaffold choices for MultipleChoice/DragDrop; DragDrop pairs answers */}
                         {hintIsChoiceType && (
                           <Box mt={2}>
                             <InputLabel shrink>Choices</InputLabel>
@@ -954,7 +954,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                           </Box>
                         )}
 
-                        {/* MODIFIED: scaffold multiple hint answers (non-DragDrop) */}
+                        {/* scaffold multiple hint answers (non-DragDrop) */}
                         {!hintIsDragDrop && (
                           <Box mt={2}>
                             <InputLabel shrink>Hint Answers</InputLabel>
