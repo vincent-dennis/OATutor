@@ -186,7 +186,8 @@ function checkAnswer({ attempt, actual, answerType, precision = 5, variabilizati
         } else {
             // guess it is a number problem
             parsed = +attempt;
-            const correctAnswers = _equality(round(parsed, precision), actual.map((actualAns) => round(+actualAns, precision)));
+            // fixed the numeric bug!
+            const correctAnswers = _equality(String(round(parsed, precision)), actual.map((actualAns) => String(round(+actualAns, precision))));
 
             if (correctAnswers.length > 0) {
                 return [parsed, correctAnswers[0], null]
