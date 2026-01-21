@@ -120,7 +120,7 @@ app.post("/api/problems", async (req, res) => {
             // 4. Check for non-empty skills
             if (!Array.isArray(step.skills) || step.skills.length === 0) {
                 return res.status(400).json({
-                error: `Step ${step.id} must include a non-empty "skills" list.`
+                    error: `Step ${step.id} must include a non-empty "skills" list.`
                 });
             }
         }
@@ -235,6 +235,18 @@ app.post("/api/problems", async (req, res) => {
                 stepBody: step.stepBody,
                 answerType: step.answerType
             };
+            
+            if (step.choices != null) {
+                stepJsonData.choices = Array.isArray(step.choices) ? step.choices : [step.choices];
+            }
+            const hasChoices =
+                Array.isArray(stepJsonData.choices) ? stepJsonData.choices.length > 0 : false;
+
+            if ((step.problemType === "MultipleChoice" || step.problemType === "DragDrop") && !hasChoices) {
+                return res.status(400).json({
+                    error: `Step '${step.id}' has problemType '${step.problemType}' but no choices given.`,
+                });
+            }
 
             fs.writeFileSync(stepJsonPath, JSON.stringify(stepJsonData, null, 4));
             console.log("  Created step JSON:", stepJsonPath);
@@ -273,7 +285,7 @@ app.post("/api/problems", async (req, res) => {
                     }
 
                     // Scaffold hint format
-                    return {
+                    const hintData =  {
                         id: hintId,
                         type: "scaffold",
                         problemType: hint.problemType,
@@ -285,6 +297,19 @@ app.post("/api/problems", async (req, res) => {
                         title: hint.title,
                         text: hint.text
                     };
+                    if (hint.choices != null) {
+                        hintData.choices = Array.isArray(hint.choices) ? hint.choices : [hint.choices];
+                    }
+                    const hasChoices =
+                        Array.isArray(hintData.choices) ? hintData.choices.length > 0 : false;
+
+                    if ((hint.problemType === "MultipleChoice" || hint.problemType === "DragDrop") && !hasChoices) {
+                        return res.status(400).json({
+                            error: `Hint '${hintId}' has problemType '${hint.problemType}' but no choices given.`,
+                        });
+                    }
+
+                    return hintData
                 }
 
                 // Default hint format
