@@ -80,7 +80,8 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           stepTitle: "",
           stepBody: "",
           answerType: "",
-          hints: []
+          hints: [],
+          choices: []
         }
       ]
     }));
@@ -89,6 +90,18 @@ export default function AddProblemForm({ courseNum, lessonId }) {
   const updateStep = (index, field, value) => {
     setForm(prev => {
       const updated = [...prev.steps];
+
+      if (field === "problemType") {
+        updated[index][field] = value;
+        if (
+          value === "MultipleChoice" &&
+          (!Array.isArray(updated[index].choices) || updated[index].choices.length === 0)
+        ) {
+          updated[index].choices = [""];
+        }
+        return { ...prev, steps: updated };
+      }
+
       updated[index][field] = value;
       return { ...prev, steps: updated };
     });
@@ -115,6 +128,41 @@ export default function AddProblemForm({ courseNum, lessonId }) {
     setForm(prev => {
       const updated = [...prev.steps];
       updated[stepIndex].customSkills.splice(skillIndex, 1);
+      return { ...prev, steps: updated };
+    });
+  };
+
+  const addChoice = (stepIndex) => {
+    setForm(prev => {
+      const updated = [...prev.steps];
+      const current = Array.isArray(updated[stepIndex].choices) ? [...updated[stepIndex].choices] : [];
+      current.push("");
+      updated[stepIndex].choices = current;
+      return { ...prev, steps: updated };
+    });
+  };
+
+  const updateChoice = (stepIndex, choiceIndex, value) => {
+    setForm(prev => {
+      const updated = [...prev.steps];
+      const current = Array.isArray(updated[stepIndex].choices) ? [...updated[stepIndex].choices] : [];
+      current[choiceIndex] = value;
+      updated[stepIndex].choices = current;
+      return { ...prev, steps: updated };
+    });
+  };
+
+  const deleteChoice = (stepIndex, choiceIndex) => {
+    setForm(prev => {
+      const updated = [...prev.steps];
+      const current = Array.isArray(updated[stepIndex].choices) ? [...updated[stepIndex].choices] : [];
+      current.splice(choiceIndex, 1);
+      // keep at least one row when MultipleChoice
+      if (updated[stepIndex].problemType === "MultipleChoice" && current.length === 0) {
+        updated[stepIndex].choices = [""];
+      } else {
+        updated[stepIndex].choices = current;
+      }
       return { ...prev, steps: updated };
     });
   };
@@ -189,6 +237,22 @@ export default function AddProblemForm({ courseNum, lessonId }) {
     e.preventDefault();
 
     try {
+      for (let i = 0; i < form.steps.length; i++) {
+        const s = form.steps[i];
+        if (s.problemType === "MultipleChoice") {
+          const rawChoices = Array.isArray(s.choices)
+            ? s.choices
+            : (s.choices != null ? [s.choices] : []);
+          const nonEmpty = rawChoices
+            .map(c => (c == null ? "" : String(c)).trim())
+            .filter(Boolean);
+          if (nonEmpty.length === 0) {
+            toast.error(`Step ${i + 1} has problemType 'MultipleChoice' but no choices given.`);
+            return;
+          }
+        }
+      }
+
       const fd = new FormData();
       fd.append("id", form.id);
       fd.append("title", form.title);
@@ -399,6 +463,39 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                 ))}
               </Select>
             </FormControl>
+
+            {/* MultipleChoice choices inputs */}
+            {step.problemType === "MultipleChoice" && (
+              <Box mt={2}>
+                <InputLabel shrink>Choices</InputLabel>
+
+                {(Array.isArray(step.choices) ? step.choices : [step.choices]).map((choice, cIdx) => (
+                  <Box key={cIdx} display="flex" alignItems="center" mt={1}>
+                    <TextField
+                      required
+                      label={`Choice ${cIdx + 1}`}
+                      fullWidth
+                      value={choice || ""}
+                      onChange={e => updateChoice(i, cIdx, e.target.value)}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={() => deleteChoice(i, cIdx)}
+                      style={{ marginLeft: 10 }}
+                      disabled={(Array.isArray(step.choices) ? step.choices.length : 1) <= 1}
+                    >
+                      Remove
+                    </Button>
+                  </Box>
+                ))}
+
+                <Box mt={1}>
+                  <Button variant="outlined" onClick={() => addChoice(i)}>
+                    + Add Choice
+                  </Button>
+                </Box>
+              </Box>
+            )}
 
             {/* Answer Type */}
             <FormControl fullWidth margin="normal">
