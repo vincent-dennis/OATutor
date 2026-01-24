@@ -17,6 +17,79 @@ import { toast } from "react-toastify";
 const problemTypes = ["TextBox", "Code", "MultipleChoice", "DragDrop", "FillBlanks"];
 const answerTypes = ["string", "arithmetic", "numeric"];
 
+// DragDrop "answer is a reordering of choices" helpers (multiset equality)
+const _norm = v => (v == null ? "" : String(v)).trim();
+
+const _toArray = v => (Array.isArray(v) ? v : (v != null ? [v] : []));
+
+const _countBy = arr =>
+  arr.reduce((acc, v) => {
+    acc[v] = (acc[v] || 0) + 1;
+    return acc;
+  }, {});
+
+const _uniqueInOrder = arr => {
+  const seen = new Set();
+  const out = [];
+  for (const v of arr) {
+    if (seen.has(v)) continue;
+    seen.add(v);
+    out.push(v);
+  }
+  return out;
+};
+
+const _multisetDiff = (a, b) => {
+  const ca = _countBy(a);
+  const cb = _countBy(b);
+  const keys = new Set([...Object.keys(ca), ...Object.keys(cb)]);
+  const diffs = [];
+  keys.forEach(k => {
+    const ac = ca[k] || 0;
+    const bc = cb[k] || 0;
+    if (ac !== bc) diffs.push({ value: k, choices: ac, answers: bc });
+  });
+  return diffs;
+};
+
+const _multisetEqual = (a, b) => {
+  if (a.length !== b.length) return false;
+  return _multisetDiff(a, b).length === 0;
+};
+
+const _formatDiff = (diffs, limit = 4) => {
+  const parts = diffs
+    .slice(0, limit)
+    .map(d => `'${d.value}': choices ${d.choices} vs answer ${d.answers}`);
+  return parts.join("; ") + (diffs.length > limit ? "…" : "");
+};
+
+// Keeps DragDrop answers (trimmed strings) within the multiset of choices, preserving order and length.
+// Intended for "while-editing" sanitation; final equality is enforced on submit.
+const _sanitizeDragDropAnswers = (rawChoices, rawAnswers) => {
+  const choicesArr = _toArray(rawChoices).map(_norm);
+  const targetLen = Math.max(choicesArr.length, 1);
+  const available = _countBy(choicesArr.filter(Boolean));
+
+  const answersArr = _toArray(rawAnswers).map(_norm);
+  const out = Array(targetLen).fill("");
+  const used = {};
+
+  for (let i = 0; i < targetLen; i++) {
+    const v = answersArr[i] || "";
+    if (!v) continue;
+    if (!available[v]) continue;
+
+    used[v] = (used[v] || 0) + 1;
+    if (used[v] > available[v]) {
+      used[v] -= 1;
+      continue;
+    }
+    out[i] = v;
+  }
+  return out;
+};
+
 export default function AddProblemForm({ courseNum, lessonId }) {
   const [loading, setLoading] = useState(true);
 
@@ -112,6 +185,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           if (ans.length > targetLen) ans.splice(targetLen);
 
           updated[index].stepAnswer = ans.length ? ans : [""];
+          updated[index].stepAnswer = _sanitizeDragDropAnswers(updated[index].choices, updated[index].stepAnswer); 
         }
 
         return { ...prev, steps: updated };
@@ -171,6 +245,11 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       const current = Array.isArray(updated[stepIndex].choices) ? [...updated[stepIndex].choices] : [];
       current[choiceIndex] = value;
       updated[stepIndex].choices = current;
+
+      if (updated[stepIndex].problemType === "DragDrop") {
+        updated[stepIndex].stepAnswer = _sanitizeDragDropAnswers(updated[stepIndex].choices, updated[stepIndex].stepAnswer); 
+      }
+
       return { ...prev, steps: updated };
     });
   };
@@ -203,6 +282,8 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           if (ans.length > targetLen) ans.splice(targetLen);
           updated[stepIndex].stepAnswer = ans.length ? ans : [""];
         }
+
+        updated[stepIndex].stepAnswer = _sanitizeDragDropAnswers(updated[stepIndex].choices, updated[stepIndex].stepAnswer); 
       }
 
       return { ...prev, steps: updated };
@@ -224,8 +305,14 @@ export default function AddProblemForm({ courseNum, lessonId }) {
     setForm(prev => {
       const updated = [...prev.steps];
       const current = Array.isArray(updated[stepIndex].stepAnswer) ? [...updated[stepIndex].stepAnswer] : [];
-      current[answerIndex] = value;
+      // DragDrop answers are stored as trimmed choice labels and kept within the choice multiset.
+      const nextVal = updated[stepIndex].problemType === "DragDrop" ? _norm(value) : value;
+      current[answerIndex] = nextVal;
       updated[stepIndex].stepAnswer = current.length ? current : [""];
+
+      if (updated[stepIndex].problemType === "DragDrop") {
+        updated[stepIndex].stepAnswer = _sanitizeDragDropAnswers(updated[stepIndex].choices, updated[stepIndex].stepAnswer); 
+      }
       return { ...prev, steps: updated };
     });
   };
@@ -293,6 +380,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           if (ans.length > targetLen) ans.splice(targetLen);
 
           hint.hintAnswer = ans.length ? ans : [""];
+          hint.hintAnswer = _sanitizeDragDropAnswers(hint.choices, hint.hintAnswer); 
         }
 
         return { ...prev, steps: updated };
@@ -329,6 +417,11 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       const current = Array.isArray(hint.choices) ? [...hint.choices] : [];
       current[choiceIndex] = value;
       hint.choices = current;
+
+      if (hint.problemType === "DragDrop") {
+        hint.hintAnswer = _sanitizeDragDropAnswers(hint.choices, hint.hintAnswer); 
+      }
+
       return { ...prev, steps: updated };
     });
   };
@@ -357,6 +450,8 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           if (ans.length > targetLen) ans.splice(targetLen);
           hint.hintAnswer = ans.length ? ans : [""];
         }
+
+        hint.hintAnswer = _sanitizeDragDropAnswers(hint.choices, hint.hintAnswer); 
       }
 
       return { ...prev, steps: updated };
@@ -380,8 +475,14 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       const updated = [...prev.steps];
       const hint = updated[stepIndex].hints[hintIndex];
       const current = Array.isArray(hint.hintAnswer) ? [...hint.hintAnswer] : [];
-      current[answerIndex] = value;
+      // DragDrop scaffold answers are stored as trimmed choice labels and kept within the choice multiset.
+      const nextVal = hint.problemType === "DragDrop" ? _norm(value) : value;
+      current[answerIndex] = nextVal;
       hint.hintAnswer = current.length ? current : [""];
+
+      if (hint.problemType === "DragDrop") {
+        hint.hintAnswer = _sanitizeDragDropAnswers(hint.choices, hint.hintAnswer); 
+      }
       return { ...prev, steps: updated };
     });
   };
@@ -461,6 +562,13 @@ export default function AddProblemForm({ courseNum, lessonId }) {
               toast.error(`Step ${i + 1} DragDrop has empty stepAnswer values.`);
               return;
             }
+
+            // enforce DragDrop answer is a permutation (same multiset) of choices
+            if (!_multisetEqual(choicesTrimmed, ansTrimmed)) {
+              const diffs = _multisetDiff(choicesTrimmed, ansTrimmed);
+              toast.error(`Step ${i + 1} DragDrop stepAnswer must be a reordering of choices. ${_formatDiff(diffs)}`);
+              return;
+            }
           }
         }
 
@@ -493,6 +601,13 @@ export default function AddProblemForm({ courseNum, lessonId }) {
               }
               if (ansTrimmed.some(a => !a)) {
                 toast.error(`Step ${i + 1}, Hint ${h + 1} DragDrop has empty hintAnswer values.`);
+                return;
+              }
+
+              // enforce DragDrop scaffold answer is a permutation (same multiset) of choices
+              if (!_multisetEqual(choicesTrimmed, ansTrimmed)) {
+                const diffs = _multisetDiff(choicesTrimmed, ansTrimmed);
+                toast.error(`Step ${i + 1}, Hint ${h + 1} DragDrop hintAnswer must be a reordering of choices. ${_formatDiff(diffs)}`);
                 return;
               }
             } else {
@@ -539,13 +654,36 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
         const mergedSkills = [...(skills || []), ...(customSkills || [])];
 
-        // normalize DragDrop stepAnswer length to choices length before submit
+        // trim + normalize DragDrop payloads so answers match choices exactly (post-trim)
         if (rest.problemType === "DragDrop") {
-          const ch = Array.isArray(rest.choices) ? rest.choices : (rest.choices != null ? [rest.choices] : []);
-          const ans = Array.isArray(rest.stepAnswer) ? [...rest.stepAnswer] : (rest.stepAnswer != null ? [rest.stepAnswer] : []);
+          const ch = _toArray(rest.choices).map(_norm);
+          const ans = _toArray(rest.stepAnswer).map(_norm);
+
           while (ans.length < ch.length) ans.push("");
           if (ans.length > ch.length) ans.splice(ch.length);
+
+          rest.choices = ch.length ? ch : [""];
           rest.stepAnswer = ans.length ? ans : [""];
+        }
+
+        // apply same trimming/normalization to scaffold DragDrop hints
+        if (Array.isArray(rest.hints)) {
+          rest.hints = rest.hints.map(h => {
+            if (h && h.type === "scaffold" && h.problemType === "DragDrop") {
+              const ch = _toArray(h.choices).map(_norm);
+              const ans = _toArray(h.hintAnswer).map(_norm);
+
+              while (ans.length < ch.length) ans.push("");
+              if (ans.length > ch.length) ans.splice(ch.length);
+
+              return {
+                ...h,
+                choices: ch.length ? ch : [""],
+                hintAnswer: ans.length ? ans : [""]
+              };
+            }
+            return h;
+          });
         }
 
         return {
@@ -655,6 +793,14 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           const isChoiceType = step.problemType === "MultipleChoice" || step.problemType === "DragDrop";
           const isDragDrop = step.problemType === "DragDrop";
 
+          // DragDrop answers must be a reordering of choices (choose from choices; enforce multiplicities)
+          const stepChoicesTrimmed = isDragDrop
+            ? (Array.isArray(step.choices) ? step.choices : [step.choices]).map(_norm)
+            : [];
+          const stepDragDropOptions = isDragDrop ? _uniqueInOrder(stepChoicesTrimmed.filter(Boolean)) : [];
+          const stepChoiceCounts = isDragDrop ? _countBy(stepChoicesTrimmed.filter(Boolean)) : {};
+          const stepAnswersTrimmed = isDragDrop ? stepAnswers.map(_norm) : [];
+
           return (
             <Paper key={i} style={{ padding: 15, marginTop: 20 }}>
               <h3>Step {i + 1}</h3>
@@ -749,37 +895,57 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                 <Box mt={2}>
                   <InputLabel shrink>Choices</InputLabel>
 
-                  {(Array.isArray(step.choices) ? step.choices : [step.choices]).map((choice, cIdx) => (
-                    <Box key={cIdx} display="flex" alignItems="center" mt={1}>
-                      <TextField
-                        required
-                        label={`Choice ${cIdx + 1}`}
-                        fullWidth
-                        value={choice || ""}
-                        onChange={e => updateChoice(i, cIdx, e.target.value)}
-                      />
+                  {(Array.isArray(step.choices) ? step.choices : [step.choices]).map((choice, cIdx) => {
+                    const usedCountsExcl = isDragDrop
+                      ? _countBy(stepAnswersTrimmed.filter((v, idx) => idx !== cIdx && v))
+                      : {};
 
-                      {isDragDrop && (
+                    return (
+                      <Box key={cIdx} display="flex" alignItems="center" mt={1}>
                         <TextField
                           required
-                          label={`Answer ${cIdx + 1}`}
+                          label={`Choice ${cIdx + 1}`}
                           fullWidth
-                          value={stepAnswers[cIdx] || ""}
-                          onChange={e => updateStepAnswerAt(i, cIdx, e.target.value)}
-                          style={{ marginLeft: 10 }}
+                          value={choice || ""}
+                          onChange={e => updateChoice(i, cIdx, e.target.value)}
+                          style={{ flex: 1 }} 
                         />
-                      )}
 
-                      <Button
-                        variant="outlined"
-                        onClick={() => deleteChoice(i, cIdx)}
-                        style={{ marginLeft: 10 }}
-                        disabled={(Array.isArray(step.choices) ? step.choices.length : 1) <= 1}
-                      >
-                        Remove
-                      </Button>
-                    </Box>
-                  ))}
+                        {isDragDrop && (
+                          <FormControl fullWidth style={{ marginLeft: 10, flex: 1 }}>
+                            <Select
+                              value={stepAnswersTrimmed[cIdx] || ""}
+                              onChange={e => updateStepAnswerAt(i, cIdx, e.target.value)}
+                              displayEmpty
+                            >
+                              <MenuItem value="">
+                                <em>Select answer</em>
+                              </MenuItem>
+
+                              {stepDragDropOptions.map(opt => (
+                                <MenuItem
+                                  key={opt}
+                                  value={opt}
+                                  disabled={(usedCountsExcl[opt] || 0) >= (stepChoiceCounts[opt] || 0)}
+                                >
+                                  {opt}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        )}
+
+                        <Button
+                          variant="outlined"
+                          onClick={() => deleteChoice(i, cIdx)}
+                          style={{ marginLeft: 10 }}
+                          disabled={(Array.isArray(step.choices) ? step.choices.length : 1) <= 1}
+                        >
+                          Remove
+                        </Button>
+                      </Box>
+                    );
+                  })}
 
                   <Box mt={1}>
                     <Button variant="outlined" onClick={() => addChoice(i)}>
@@ -856,6 +1022,14 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                 const hintIsChoiceType = hint.type === "scaffold" && (hint.problemType === "MultipleChoice" || hint.problemType === "DragDrop");
                 const hintIsDragDrop = hint.type === "scaffold" && hint.problemType === "DragDrop";
 
+                // DragDrop scaffold answers must be a reordering of choices (choose from choices; enforce multiplicities)
+                const hintChoicesTrimmed = hintIsDragDrop
+                  ? (Array.isArray(hint.choices) ? hint.choices : [hint.choices]).map(_norm)
+                  : [];
+                const hintDragDropOptions = hintIsDragDrop ? _uniqueInOrder(hintChoicesTrimmed.filter(Boolean)) : [];
+                const hintChoiceCounts = hintIsDragDrop ? _countBy(hintChoicesTrimmed.filter(Boolean)) : {};
+                const hintAnswersTrimmed = hintIsDragDrop ? hintAnswers.map(_norm) : [];
+
                 return (
                   <Paper key={h} style={{ padding: 10, marginTop: 15 }}>
                     <h4>Hint {h + 1} ({hint.type})</h4>
@@ -914,37 +1088,57 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                           <Box mt={2}>
                             <InputLabel shrink>Choices</InputLabel>
 
-                            {(Array.isArray(hint.choices) ? hint.choices : [hint.choices]).map((c, cIdx) => (
-                              <Box key={cIdx} display="flex" alignItems="center" mt={1}>
-                                <TextField
-                                  required
-                                  label={`Choice ${cIdx + 1}`}
-                                  fullWidth
-                                  value={c || ""}
-                                  onChange={e => updateHintChoice(i, h, cIdx, e.target.value)}
-                                />
+                            {(Array.isArray(hint.choices) ? hint.choices : [hint.choices]).map((c, cIdx) => {
+                              const usedCountsExcl = hintIsDragDrop
+                                ? _countBy(hintAnswersTrimmed.filter((v, idx) => idx !== cIdx && v))
+                                : {};
 
-                                {hintIsDragDrop && (
+                              return (
+                                <Box key={cIdx} display="flex" alignItems="center" mt={1}>
                                   <TextField
                                     required
-                                    label={`Answer ${cIdx + 1}`}
+                                    label={`Choice ${cIdx + 1}`}
                                     fullWidth
-                                    value={hintAnswers[cIdx] || ""}
-                                    onChange={e => updateHintAnswerAt(i, h, cIdx, e.target.value)}
-                                    style={{ marginLeft: 10 }}
+                                    value={c || ""}
+                                    onChange={e => updateHintChoice(i, h, cIdx, e.target.value)}
+                                    style={{ flex: 1 }} 
                                   />
-                                )}
 
-                                <Button
-                                  variant="outlined"
-                                  onClick={() => deleteHintChoice(i, h, cIdx)}
-                                  style={{ marginLeft: 10 }}
-                                  disabled={(Array.isArray(hint.choices) ? hint.choices.length : 1) <= 1}
-                                >
-                                  Remove
-                                </Button>
-                              </Box>
-                            ))}
+                                  {hintIsDragDrop && (
+                                    <FormControl fullWidth style={{ marginLeft: 10, flex: 1 }}>
+                                      <Select
+                                        value={hintAnswersTrimmed[cIdx] || ""}
+                                        onChange={e => updateHintAnswerAt(i, h, cIdx, e.target.value)}
+                                        displayEmpty
+                                      >
+                                        <MenuItem value="">
+                                          <em>Select answer</em>
+                                        </MenuItem>
+
+                                        {hintDragDropOptions.map(opt => (
+                                          <MenuItem
+                                            key={opt}
+                                            value={opt}
+                                            disabled={(usedCountsExcl[opt] || 0) >= (hintChoiceCounts[opt] || 0)}
+                                          >
+                                            {opt}
+                                          </MenuItem>
+                                        ))}
+                                      </Select>
+                                    </FormControl>
+                                  )}
+
+                                  <Button
+                                    variant="outlined"
+                                    onClick={() => deleteHintChoice(i, h, cIdx)}
+                                    style={{ marginLeft: 10 }}
+                                    disabled={(Array.isArray(hint.choices) ? hint.choices.length : 1) <= 1}
+                                  >
+                                    Remove
+                                  </Button>
+                                </Box>
+                              );
+                            })}
 
                             <Box mt={1}>
                               <Button variant="outlined" onClick={() => addHintChoice(i, h)}>
