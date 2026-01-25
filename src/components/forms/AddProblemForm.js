@@ -8,14 +8,93 @@ import {
   Select,
   FormControl,
   InputLabel,
-  Checkbox,
-  FormControlLabel,
-  Chip
+  Chip,
+  Container,
+  Typography,
+  Divider
 } from "@material-ui/core";
+import { makeStyles } from "@material-ui/core/styles";
 import { toast } from "react-toastify";
 
 const problemTypes = ["TextBox", "Code", "MultipleChoice", "DragDrop", "FillBlanks"];
 const answerTypes = ["string", "arithmetic", "numeric"];
+
+const useStyles = makeStyles(theme => ({
+  page: {
+    paddingTop: theme.spacing(4),
+    paddingBottom: theme.spacing(6)
+  },
+  rootPaper: {
+    padding: theme.spacing(3),
+    borderRadius: theme.spacing(2)
+  },
+  header: {
+    marginBottom: theme.spacing(2)
+  },
+  form: {
+    marginTop: theme.spacing(2)
+  },
+  sectionRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: theme.spacing(2),
+    marginTop: theme.spacing(3)
+  },
+  stepPaper: {
+    padding: theme.spacing(2.5),
+    marginTop: theme.spacing(3),
+    borderRadius: theme.spacing(2)
+  },
+  stepHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: theme.spacing(2)
+  },
+  badge: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    background: theme.palette.primary.main,
+    color: theme.palette.primary.contrastText,
+    fontWeight: 700,
+    fontSize: 13,
+    flex: "0 0 auto"
+  },
+  headerLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1.25)
+  },
+  hintPaper: {
+    padding: theme.spacing(2),
+    marginTop: theme.spacing(2),
+    borderRadius: theme.spacing(2),
+    background: theme.palette.action.hover
+  },
+  hintHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: theme.spacing(2),
+    marginBottom: theme.spacing(1)
+  },
+  chip: {
+    margin: theme.spacing(0.5)
+  },
+  fileInput: {
+    marginTop: theme.spacing(1)
+  },
+  submitRow: {
+    marginTop: theme.spacing(4),
+    display: "flex",
+    justifyContent: "flex-end"
+  }
+}));
 
 // DragDrop "answer is a reordering of choices" helpers (multiset equality)
 const _norm = v => (v == null ? "" : String(v)).trim();
@@ -105,6 +184,8 @@ export default function AddProblemForm({ courseNum, lessonId }) {
     steps: [],
     images: []
   });
+
+  const classes = useStyles();
 
   /** -------------------------------
    * GET skills + lesson info
@@ -718,21 +799,42 @@ export default function AddProblemForm({ courseNum, lessonId }) {
     }
   };
 
-  if (loading) return <h3>Loading...</h3>;
+  if (loading) {
+    return (
+      <Container maxWidth="md" className={classes.page}>
+        <Paper className={classes.rootPaper} elevation={2}>
+          <Typography variant="h6">Loading…</Typography>
+        </Paper>
+      </Container>
+    );
+  }
 
   /** --------------------------------
    * RENDER COMPONENT
    * -------------------------------- */
   return (
-    <Paper style={{ padding: 20 }}>
-      <h2>
-        Add new problem for Course <b>{courseName}</b>, Lesson <b>{lessonName}</b>
-      </h2>
+    <Container maxWidth="md" className={classes.page}>
+      <Paper className={classes.rootPaper} elevation={2}>
+        <Box className={classes.header}>
+          <Typography variant="h4" gutterBottom>
+            Add New Problem
+          </Typography>
+          <Typography variant="subtitle1" color="textSecondary">
+            Course <b>{courseName}</b> · Lesson <b>{lessonName}</b>
+          </Typography>
+        </Box>
 
-      <form onSubmit={submitForm}>
+        <Divider />
+
+        <form onSubmit={submitForm} className={classes.form}>
+
+        <Box mb={1}>
+          <Typography variant="h6">Problem Details</Typography>
+        </Box>
 
         {/* BASIC FIELDS --------------------------------------------------- */}
         <TextField
+          variant="outlined"
           required
           label="Problem ID"
           fullWidth
@@ -741,16 +843,18 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           margin="normal"
         />
         <TextField
+          variant="outlined"
           required
-          label="Title"
+          label="Problem Title"
           fullWidth
           onBlur={e => updateField("title", e.target.value)}
           defaultValue={form.title}
           margin="normal"
         />
         <TextField
+          variant="outlined"
           required
-          label="Body"
+          label="Problem Body"
           fullWidth
           multiline
           onBlur={e => updateField("body", e.target.value)}
@@ -760,13 +864,16 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
         {/* IMAGES ---------------------------------------------------------- */}
         <Box mt={2}>
-            <InputLabel shrink>Images (Max 5, Total 20MB). To include in problem body: ##[filename]</InputLabel>
+            <Typography variant="h6">Images</Typography>
+            <Typography variant="body2" color="textSecondary">
+              Max 5 images, total 20MB. To include in the problem body, do: ##[filename]
+            </Typography>
             <input
                 type="file"
                 multiple
                 accept="image/*"
                 onChange={handleFileUpload}
-                style={{ marginTop: 8 }}
+                className={classes.fileInput}
             />
             {/* Display uploaded file names */}
             <Box mt={1} display="flex" flexWrap="wrap">
@@ -775,14 +882,15 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                         key={i}
                         label={file.name}
                         variant="outlined"
-                        style={{ margin: 4 }}
+                        className={classes.chip}
                     />
                 ))}
             </Box>
         </Box>
 
         {/* STEPS ------------------------------------------------------------ */}
-        <Box mt={3}>
+        <Box className={classes.sectionRow}>
+          <Typography variant="h6">Problem Steps</Typography>
           <Button variant="outlined" color="primary" onClick={addStep}>
             + Add Step
           </Button>
@@ -802,11 +910,21 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           const stepAnswersTrimmed = isDragDrop ? stepAnswers.map(_norm) : [];
 
           return (
-            <Paper key={i} style={{ padding: 15, marginTop: 20 }}>
-              <h3>Step {i + 1}</h3>
+            <Paper key={i} variant="outlined" className={classes.stepPaper}>
+              <Box className={classes.stepHeader}>
+                <Box className={classes.headerLeft}>
+                  <span className={classes.badge}>{i + 1}</span>
+                  <Typography variant="h6">Step {i + 1}</Typography>
+                </Box>
+                {step.problemType ? (
+                  <Chip label={step.problemType} size="small" variant="outlined" />
+                ) : null}
+              </Box>
+              <Divider style={{ marginTop: 12 }} />
 
               {/* Step Title */}
               <TextField
+                variant="outlined"
                 required
                 label="Step Title"
                 fullWidth
@@ -817,6 +935,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
               {/* Step Body */}
               <TextField
+                variant="outlined"
                 required
                 label="Step Body"
                 fullWidth
@@ -828,7 +947,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
               {/* EXISTING SKILLS SELECT */}
               <FormControl fullWidth margin="normal">
-                <InputLabel>Skills</InputLabel>
+                <InputLabel>Associated Skills</InputLabel>
                 <Select
                   multiple
                   value={step.skills}
@@ -843,7 +962,8 @@ export default function AddProblemForm({ courseNum, lessonId }) {
               {/* ADD CUSTOM SKILL */}
               <Box display="flex" alignItems="center" mt={2}>
                 <TextField
-                  label="Add Custom Skill"
+                  variant="outlined"
+                  label="New Skill"
                   fullWidth
                   value={step.tempCustomSkill || ""}
                   onChange={e => updateStep(i, "tempCustomSkill", e.target.value)}
@@ -857,6 +977,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                 <Button
                   variant="contained"
                   color="primary"
+                  disableElevation
                   onClick={() => addCustomSkill(i)}
                   style={{ marginLeft: 10 }}
                 >
@@ -872,7 +993,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                       key={sIdx}
                       label={skill}
                       onDelete={() => deleteCustomSkill(i, sIdx)}
-                      style={{ margin: 5 }}
+                      className={classes.chip}
                     />
                   ))}
               </Box>
@@ -903,6 +1024,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                     return (
                       <Box key={cIdx} display="flex" alignItems="center" mt={1}>
                         <TextField
+                          variant="outlined"
                           required
                           label={`Choice ${cIdx + 1}`}
                           fullWidth
@@ -976,6 +1098,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                   {stepAnswers.map((ans, aIdx) => (
                     <Box key={aIdx} display="flex" alignItems="center" mt={1}>
                       <TextField
+                        variant="outlined"
                         required
                         label={`Answer ${aIdx + 1}`}
                         fullWidth
@@ -1031,10 +1154,14 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                 const hintAnswersTrimmed = hintIsDragDrop ? hintAnswers.map(_norm) : [];
 
                 return (
-                  <Paper key={h} style={{ padding: 10, marginTop: 15 }}>
-                    <h4>Hint {h + 1} ({hint.type})</h4>
+                  <Paper key={h} variant="outlined" className={classes.hintPaper}>
+                    <Box className={classes.hintHeader}>
+                      <Typography variant="subtitle1">Hint {h + 1}</Typography>
+                      <Chip label={hint.type} size="small" variant="outlined" />
+                    </Box>
 
                     <TextField
+                      variant="outlined"
                       required
                       label="Title"
                       fullWidth
@@ -1044,6 +1171,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                     />
 
                     <TextField
+                      variant="outlined"
                       required
                       label="Text"
                       fullWidth
@@ -1096,6 +1224,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                               return (
                                 <Box key={cIdx} display="flex" alignItems="center" mt={1}>
                                   <TextField
+                                    variant="outlined"
                                     required
                                     label={`Choice ${cIdx + 1}`}
                                     fullWidth
@@ -1156,6 +1285,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                             {hintAnswers.map((ans, aIdx) => (
                               <Box key={aIdx} display="flex" alignItems="center" mt={1}>
                                 <TextField
+                                  variant="outlined"
                                   required
                                   label={`Hint Answer ${aIdx + 1}`}
                                   fullWidth
@@ -1189,12 +1319,13 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           );
         })}
 
-        <Box mt={4}>
-          <Button type="submit" color="primary" variant="contained">
+        <Box className={classes.submitRow}>
+          <Button type="submit" color="primary" variant="contained" disableElevation>
             Submit Problem
           </Button>
         </Box>
       </form>
-    </Paper>
+      </Paper>
+    </Container>
   );
 }
