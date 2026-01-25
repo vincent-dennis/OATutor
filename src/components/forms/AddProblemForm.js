@@ -233,7 +233,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           problemType: "",
           stepTitle: "",
           stepBody: "",
-          answerType: "",
+          answerType: "string",
           hints: [],
           choices: []
         }
@@ -247,6 +247,13 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
       if (field === "problemType") {
         updated[index][field] = value;
+
+        // answerType only applies to TextBox; default to "string" otherwise
+        if (value !== "TextBox") {
+          updated[index].answerType = "string";
+        } else if (!updated[index].answerType || !answerTypes.includes(updated[index].answerType)) {
+          updated[index].answerType = "string";
+        }
 
         // choices required for MultipleChoice and DragDrop + initialize arrays
         if (
@@ -273,6 +280,11 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       }
 
       updated[index][field] = value;
+
+      // answerType is fixed to "string" unless problemType is TextBox
+      if (field === "answerType" && updated[index].problemType !== "TextBox") {
+        updated[index].answerType = "string";
+      }
       return { ...prev, steps: updated };
     });
   };
@@ -422,7 +434,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
         : {
             type: "scaffold",
             problemType: "",
-            answerType: "",
+            answerType: "string",
             hintAnswer: [""],
             choices: [], // scaffold supports choices for MultipleChoice/DragDrop
             title: "",
@@ -445,6 +457,13 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       if (hint.type === "scaffold" && field === "problemType") {
         hint[field] = value;
 
+        // answerType only applies to TextBox; default to "string" otherwise
+        if (value !== "TextBox") {
+          hint.answerType = "string";
+        } else if (!hint.answerType || !answerTypes.includes(hint.answerType)) {
+          hint.answerType = "string";
+        }
+
         if (
           (value === "MultipleChoice" || value === "DragDrop") &&
           (!Array.isArray(hint.choices) || hint.choices.length === 0)
@@ -464,6 +483,11 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           hint.hintAnswer = _sanitizeDragDropAnswers(hint.choices, hint.hintAnswer); 
         }
 
+        return { ...prev, steps: updated };
+      }
+
+      if (hint.type === "scaffold" && field === "answerType" && hint.problemType !== "TextBox") {
+        hint.answerType = "string";
         return { ...prev, steps: updated };
       }
 
@@ -747,6 +771,13 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           rest.stepAnswer = ans.length ? ans : [""];
         }
 
+        // answerType only applies to TextBox; default to "string" otherwise
+        if (rest.problemType !== "TextBox") {
+          rest.answerType = "string";
+        } else if (!rest.answerType || !answerTypes.includes(rest.answerType)) {
+          rest.answerType = "string";
+        }
+
         // apply same trimming/normalization to scaffold DragDrop hints
         if (Array.isArray(rest.hints)) {
           rest.hints = rest.hints.map(h => {
@@ -759,9 +790,18 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
               return {
                 ...h,
+                answerType: "string",
                 choices: ch.length ? ch : [""],
                 hintAnswer: ans.length ? ans : [""]
               };
+            }
+            if (h && h.type === "scaffold") {
+              if (h.problemType !== "TextBox") {
+                return { ...h, answerType: "string" };
+              }
+              if (!h.answerType || !answerTypes.includes(h.answerType)) {
+                return { ...h, answerType: "string" };
+              }
             }
             return h;
           });
@@ -852,7 +892,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           margin="normal"
         />
         <TextField
-          variant="outlined"
+                  variant="outlined"
           required
           label="Problem Body"
           fullWidth
@@ -866,7 +906,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
         <Box mt={2}>
             <Typography variant="h6">Images</Typography>
             <Typography variant="body2" color="textSecondary">
-              Max 5 images, total 20MB. To include in the problem body, do: ##[filename]
+              Max 5 images, total 20MB. To include in problem body: ##[filename]
             </Typography>
             <input
                 type="file"
@@ -924,7 +964,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
               {/* Step Title */}
               <TextField
-                variant="outlined"
+                  variant="outlined"
                 required
                 label="Step Title"
                 fullWidth
@@ -947,7 +987,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
               {/* EXISTING SKILLS SELECT */}
               <FormControl fullWidth margin="normal">
-                <InputLabel>Associated Skills</InputLabel>
+                <InputLabel>Skills</InputLabel>
                 <Select
                   multiple
                   value={step.skills}
@@ -1024,7 +1064,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                     return (
                       <Box key={cIdx} display="flex" alignItems="center" mt={1}>
                         <TextField
-                          variant="outlined"
+                  variant="outlined"
                           required
                           label={`Choice ${cIdx + 1}`}
                           fullWidth
@@ -1077,18 +1117,20 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                 </Box>
               )}
 
-              {/* Answer Type */}
-              <FormControl fullWidth margin="normal">
-                <InputLabel>Answer Type</InputLabel>
-                <Select
-                  value={step.answerType}
-                  onChange={e => updateStep(i, "answerType", e.target.value)}
-                >
-                  {answerTypes.map(a => (
-                    <MenuItem key={a} value={a}>{a}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              {/* Answer Type (TextBox only) */}
+              {step.problemType === "TextBox" && (
+                <FormControl fullWidth margin="normal">
+                  <InputLabel>Answer Type</InputLabel>
+                  <Select
+                    value={step.answerType}
+                    onChange={e => updateStep(i, "answerType", e.target.value)}
+                  >
+                    {answerTypes.map(a => (
+                      <MenuItem key={a} value={a}>{a}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
 
               {/* Multiple step answers (non-DragDrop) */}
               {!isDragDrop && (
@@ -1197,19 +1239,21 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                           </Select>
                         </FormControl>
 
-                        <FormControl fullWidth margin="normal">
-                          <InputLabel>Answer Type</InputLabel>
-                          <Select
-                            value={hint.answerType}
-                            onChange={e =>
-                              updateHint(i, h, "answerType", e.target.value)
-                            }
-                          >
-                            {answerTypes.map(a => (
-                              <MenuItem key={a} value={a}>{a}</MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
+                        {hint.problemType === "TextBox" && (
+                          <FormControl fullWidth margin="normal">
+                            <InputLabel>Answer Type</InputLabel>
+                            <Select
+                              value={hint.answerType}
+                              onChange={e =>
+                                updateHint(i, h, "answerType", e.target.value)
+                              }
+                            >
+                              {answerTypes.map(a => (
+                                <MenuItem key={a} value={a}>{a}</MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        )}
 
                         {/* scaffold choices for MultipleChoice/DragDrop; DragDrop pairs answers */}
                         {hintIsChoiceType && (
