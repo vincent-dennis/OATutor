@@ -1004,7 +1004,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
         <Box mt={2}>
             <Typography variant="h6">Images</Typography>
             <Typography variant="body2" color="textSecondary">
-              Max 5 images, total 20MB. To include in problem body: ##[filename]
+              Max 5 images, total 20MB. To include in problem or step body: ##[filename]
             </Typography>
             <input
                 type="file"

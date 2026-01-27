@@ -1,13 +1,13 @@
 import {MASTERY_THRESHOLD} from "../../../config/config.js"
 
 function heuristic(problems, completedProbs, lessonMastery) {
-
+  var codeThreshold = 0.0
   var chosenProblem = [];
   for (var problem of problems) {
     // Already completed this problem or irrelevant (null if not in learning goals)
     if (completedProbs.has(problem.id) || problem.probMastery == null || problem.probMastery >= MASTERY_THRESHOLD) {
       continue;
-    } else if (lessonMastery < 0.5 && problem.steps?.some(step => step.problemType == "Code")) { // if problem contains a "Code" step, then skip if its mastery is < 0.5
+    } else if (lessonMastery < codeThreshold && problem.steps?.some(step => step.problemType == "Code")) { // if problem contains a "Code" step, then skip if its mastery is < 0.5
       console.log("skipped Code problem with id:" + problem.id + " at current lesson mastery:" + lessonMastery);
       continue;
     } else if (chosenProblem.length === 0 || chosenProblem[0].probMastery > problem.probMastery) {
