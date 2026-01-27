@@ -1,9 +1,8 @@
 import React from "react";
 import Spacer from "@components/Spacer";
 import { useStyles } from "./Posts";
-import { HELP_DOCUMENT, SITE_NAME } from "../../config/config";
+import { SITE_NAME } from "../../config/config";
 
-const VPAT_LINK = `${process.env.PUBLIC_URL}/static/documents/OATutor_Sec508_WCAG.pdf`
 
 const AddProblemGuide = () => {
     const classes = useStyles()

@@ -283,6 +283,12 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           updated[index].stepAnswer = _sanitizeDragDropAnswers(updated[index].choices, updated[index].stepAnswer); 
         }
 
+        if (value === "MultipleChoice") {
+          const choicesTrimmed = _toArray(updated[index].choices).map(_norm).filter(Boolean);
+          const ans0 = _norm(_toArray(updated[index].stepAnswer)[0] || "");
+          updated[index].stepAnswer = [choicesTrimmed.includes(ans0) ? ans0 : ""];
+        }
+
         return { ...prev, steps: updated };
       }
 
@@ -346,6 +352,12 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       current[choiceIndex] = value;
       updated[stepIndex].choices = current;
 
+      if (updated[stepIndex].problemType === "MultipleChoice") {
+        const choicesTrimmed = _toArray(updated[stepIndex].choices).map(_norm).filter(Boolean);
+        const ans0 = _norm(_toArray(updated[stepIndex].stepAnswer)[0] || "");
+        updated[stepIndex].stepAnswer = [choicesTrimmed.includes(ans0) ? ans0 : ""];
+      }
+
       if (updated[stepIndex].problemType === "DragDrop") {
         updated[stepIndex].stepAnswer = _sanitizeDragDropAnswers(updated[stepIndex].choices, updated[stepIndex].stepAnswer); 
       }
@@ -368,6 +380,12 @@ export default function AddProblemForm({ courseNum, lessonId }) {
         updated[stepIndex].choices = [""];
       } else {
         updated[stepIndex].choices = current;
+      }
+
+      if (updated[stepIndex].problemType === "MultipleChoice") {
+        const choicesTrimmed = _toArray(updated[stepIndex].choices).map(_norm).filter(Boolean);
+        const ans0 = _norm(_toArray(updated[stepIndex].stepAnswer)[0] || "");
+        updated[stepIndex].stepAnswer = [choicesTrimmed.includes(ans0) ? ans0 : ""];
       }
 
       // DragDrop sync stepAnswer length with choices (and keep at least one)
@@ -394,6 +412,13 @@ export default function AddProblemForm({ courseNum, lessonId }) {
   const addStepAnswer = (stepIndex) => {
     setForm(prev => {
       const updated = [...prev.steps];
+
+      // MultipleChoice only allows one answer
+      if (updated[stepIndex].problemType === "MultipleChoice") {
+        updated[stepIndex].stepAnswer = [_norm(_toArray(updated[stepIndex].stepAnswer)[0] || "")];
+        return { ...prev, steps: updated };
+      }
+
       const current = Array.isArray(updated[stepIndex].stepAnswer) ? [...updated[stepIndex].stepAnswer] : [];
       current.push("");
       updated[stepIndex].stepAnswer = current.length ? current : [""];
@@ -478,6 +503,12 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           hint.choices = [""];
         }
 
+        if (value === "MultipleChoice") {
+          const choicesTrimmed = _toArray(hint.choices).map(_norm).filter(Boolean);
+          const ans0 = _norm(_toArray(hint.hintAnswer)[0] || "");
+          hint.hintAnswer = [choicesTrimmed.includes(ans0) ? ans0 : ""];
+        }
+
         if (value === "DragDrop") {
           const choicesLen = Array.isArray(hint.choices) ? hint.choices.length : 0;
           const ans = Array.isArray(hint.hintAnswer) ? [...hint.hintAnswer] : [];
@@ -530,6 +561,12 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       current[choiceIndex] = value;
       hint.choices = current;
 
+      if (hint.problemType === "MultipleChoice") {
+        const choicesTrimmed = _toArray(hint.choices).map(_norm).filter(Boolean);
+        const ans0 = _norm(_toArray(hint.hintAnswer)[0] || "");
+        hint.hintAnswer = [choicesTrimmed.includes(ans0) ? ans0 : ""];
+      }
+
       if (hint.problemType === "DragDrop") {
         hint.hintAnswer = _sanitizeDragDropAnswers(hint.choices, hint.hintAnswer); 
       }
@@ -549,6 +586,12 @@ export default function AddProblemForm({ courseNum, lessonId }) {
         hint.choices = [""];
       } else {
         hint.choices = current;
+      }
+
+      if (hint.problemType === "MultipleChoice") {
+        const choicesTrimmed = _toArray(hint.choices).map(_norm).filter(Boolean);
+        const ans0 = _norm(_toArray(hint.hintAnswer)[0] || "");
+        hint.hintAnswer = [choicesTrimmed.includes(ans0) ? ans0 : ""];
       }
 
       if (hint.problemType === "DragDrop") {
@@ -575,6 +618,13 @@ export default function AddProblemForm({ courseNum, lessonId }) {
     setForm(prev => {
       const updated = [...prev.steps];
       const hint = updated[stepIndex].hints[hintIndex];
+
+      // MultipleChoice only allows one answer
+      if (hint.problemType === "MultipleChoice") {
+        hint.hintAnswer = [_norm(_toArray(hint.hintAnswer)[0] || "")];
+        return { ...prev, steps: updated };
+      }
+
       const current = Array.isArray(hint.hintAnswer) ? [...hint.hintAnswer] : [];
       current.push("");
       hint.hintAnswer = current.length ? current : [""];
@@ -663,6 +713,25 @@ export default function AddProblemForm({ courseNum, lessonId }) {
             return;
           }
 
+          if (s.problemType === "MultipleChoice") {
+            const rawAns = _toArray(s.stepAnswer);
+            const ans0 = _norm(rawAns[0] || "");
+            const choicesTrimmed = rawChoices.map(c => (c == null ? "" : String(c)).trim());
+
+            if (rawAns.length !== 1) {
+              toast.error(`Step ${i + 1} MultipleChoice requires exactly one stepAnswer.`);
+              return;
+            }
+            if (!ans0) {
+              toast.error(`Step ${i + 1} MultipleChoice requires a non-empty stepAnswer.`);
+              return;
+            }
+            if (!choicesTrimmed.includes(ans0)) {
+              toast.error(`Step ${i + 1} MultipleChoice stepAnswer must be one of the choices.`);
+              return;
+            }
+          }
+
           if (s.problemType === "DragDrop") {
             const rawAns = Array.isArray(s.stepAnswer) ? s.stepAnswer : (s.stepAnswer != null ? [s.stepAnswer] : []);
             if (rawAns.length !== rawChoices.length) {
@@ -705,6 +774,22 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
             const rawAns = Array.isArray(hint.hintAnswer) ? hint.hintAnswer : (hint.hintAnswer != null ? [hint.hintAnswer] : []);
             const ansTrimmed = rawAns.map(a => (a == null ? "" : String(a)).trim());
+            
+            if (hint.problemType === "MultipleChoice") {
+              if (rawAns.length !== 1) {
+                toast.error(`Step ${i + 1}, Hint ${h + 1} MultipleChoice requires exactly one hintAnswer.`);
+                return;
+              }
+              const ans0 = _norm(rawAns[0] || "");
+              if (!ans0) {
+                toast.error(`Step ${i + 1}, Hint ${h + 1} MultipleChoice requires a non-empty hintAnswer.`);
+                return;
+              }
+              if (!choicesTrimmed.includes(ans0)) {
+                toast.error(`Step ${i + 1}, Hint ${h + 1} MultipleChoice hintAnswer must be one of the choices.`);
+                return;
+              }
+            }
 
             if (hint.problemType === "DragDrop") {
               if (rawAns.length !== rawChoices.length) {
@@ -1094,7 +1179,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                               displayEmpty
                             >
                               <MenuItem value="">
-                                <em>Select answer to go in this order</em>
+                                <em>Select answer to go in this position</em>
                               </MenuItem>
 
                               {stepDragDropOptions.map(opt => (
@@ -1147,36 +1232,57 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
               {/* Multiple step answers (non-DragDrop) */}
               {!isDragDrop && (
-                <Box mt={2}>
-                  <InputLabel shrink>Step Answers</InputLabel>
-
-                  {stepAnswers.map((ans, aIdx) => (
-                    <Box key={aIdx} display="flex" alignItems="center" mt={1}>
-                      <TextField
-                        variant="outlined"
-                        required
-                        label={`Answer ${aIdx + 1}`}
-                        fullWidth
-                        value={ans || ""}
-                        onChange={e => updateStepAnswerAt(i, aIdx, e.target.value)}
-                      />
-                      <Button
-                        variant="outlined"
-                        onClick={() => deleteStepAnswer(i, aIdx)}
-                        style={{ marginLeft: 10 }}
-                        disabled={stepAnswers.length <= 1}
+                step.problemType === "MultipleChoice" ? (
+                  <Box mt={2}>
+                    <InputLabel shrink>Step Answer</InputLabel>
+                    <FormControl fullWidth style={{ marginTop: 8 }}>
+                      <Select
+                        value={_norm(stepAnswers[0] || "")}
+                        onChange={e => updateStepAnswerAt(i, 0, e.target.value)}
+                        displayEmpty
                       >
-                        Remove
+                        <MenuItem value="">
+                          <em>Select correct choice</em>
+                        </MenuItem>
+                        {_toArray(step.choices).map((c, idx) => {
+                          const v = _norm(c);
+                          return v ? <MenuItem key={`${v}-${idx}`} value={v}>{v}</MenuItem> : null;
+                        })}
+                      </Select>
+                    </FormControl>
+                  </Box>
+                ) : (
+                  <Box mt={2}>
+                    <InputLabel shrink>Step Answers</InputLabel>
+
+                    {stepAnswers.map((ans, aIdx) => (
+                      <Box key={aIdx} display="flex" alignItems="center" mt={1}>
+                        <TextField
+                          variant="outlined"
+                          required
+                          label={`Answer ${aIdx + 1}`}
+                          fullWidth
+                          value={ans || ""}
+                          onChange={e => updateStepAnswerAt(i, aIdx, e.target.value)}
+                        />
+                        <Button
+                          variant="outlined"
+                          onClick={() => deleteStepAnswer(i, aIdx)}
+                          style={{ marginLeft: 10 }}
+                          disabled={stepAnswers.length <= 1}
+                        >
+                          Remove
+                        </Button>
+                      </Box>
+                    ))}
+
+                    <Box mt={1}>
+                      <Button variant="outlined" onClick={() => addStepAnswer(i)}>
+                        + Add Answer
                       </Button>
                     </Box>
-                  ))}
-
-                  <Box mt={1}>
-                    <Button variant="outlined" onClick={() => addStepAnswer(i)}>
-                      + Add Answer
-                    </Button>
                   </Box>
-                </Box>
+                )
               )}
 
               {/* HINTS -------------------------------------------------------- */}
@@ -1336,36 +1442,57 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
                         {/* scaffold multiple hint answers (non-DragDrop) */}
                         {!hintIsDragDrop && (
-                          <Box mt={2}>
-                            <InputLabel shrink>Hint Answers</InputLabel>
-
-                            {hintAnswers.map((ans, aIdx) => (
-                              <Box key={aIdx} display="flex" alignItems="center" mt={1}>
-                                <TextField
-                                  variant="outlined"
-                                  required
-                                  label={`Hint Answer ${aIdx + 1}`}
-                                  fullWidth
-                                  value={ans || ""}
-                                  onChange={e => updateHintAnswerAt(i, h, aIdx, e.target.value)}
-                                />
-                                <Button
-                                  variant="outlined"
-                                  onClick={() => deleteHintAnswer(i, h, aIdx)}
-                                  style={{ marginLeft: 10 }}
-                                  disabled={hintAnswers.length <= 1}
+                          hint.problemType === "MultipleChoice" ? (
+                            <Box mt={2}>
+                              <InputLabel shrink>Hint Answer</InputLabel>
+                              <FormControl fullWidth style={{ marginTop: 8 }}>
+                                <Select
+                                  value={_norm(hintAnswers[0] || "")}
+                                  onChange={e => updateHintAnswerAt(i, 0, e.target.value)}
+                                  displayEmpty
                                 >
-                                  Remove
+                                  <MenuItem value="">
+                                    <em>Select correct choice</em>
+                                  </MenuItem>
+                                  {_toArray(hint.choices).map((c, idx) => {
+                                    const v = _norm(c);
+                                    return v ? <MenuItem key={`${v}-${idx}`} value={v}>{v}</MenuItem> : null;
+                                  })}
+                                </Select>
+                              </FormControl>
+                            </Box>
+                          ) : (
+                            <Box mt={2}>
+                              <InputLabel shrink>Hint Answers</InputLabel>
+
+                              {hintAnswers.map((ans, aIdx) => (
+                                <Box key={aIdx} display="flex" alignItems="center" mt={1}>
+                                  <TextField
+                                    variant="outlined"
+                                    required
+                                    label={`Hint Answer ${aIdx + 1}`}
+                                    fullWidth
+                                    value={ans || ""}
+                                    onChange={e => updateHintAnswerAt(i, h, aIdx, e.target.value)}
+                                  />
+                                  <Button
+                                    variant="outlined"
+                                    onClick={() => deleteHintAnswer(i, h, aIdx)}
+                                    style={{ marginLeft: 10 }}
+                                    disabled={hintAnswers.length <= 1}
+                                  >
+                                    Remove
+                                  </Button>
+                                </Box>
+                              ))}
+
+                              <Box mt={1}>
+                                <Button variant="outlined" onClick={() => addHintAnswer(i, h)}>
+                                  + Add Hint Answer
                                 </Button>
                               </Box>
-                            ))}
-
-                            <Box mt={1}>
-                              <Button variant="outlined" onClick={() => addHintAnswer(i, h)}>
-                                + Add Hint Answer
-                              </Button>
                             </Box>
-                          </Box>
+                          )
                         )}
                       </>
                     )}
