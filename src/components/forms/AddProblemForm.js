@@ -15,8 +15,12 @@ import {
 } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import { toast } from "react-toastify";
+import IconButton from "@material-ui/core/IconButton";
+import HelpOutlineOutlinedIcon from "@material-ui/icons/HelpOutlineOutlined";
+import Popup from "../Popup/Popup.js";
+import AddProblemGuide from "../../pages/Posts/AddProblemGuide.js";
 
-const problemTypes = ["TextBox", "Code", "MultipleChoice", "DragDrop", "FillBlanks"];
+const problemTypes = ["TextBox", "Code", "MultipleChoice", "DragDrop"];
 const answerTypes = ["string", "arithmetic", "numeric"];
 
 const useStyles = makeStyles(theme => ({
@@ -184,6 +188,9 @@ export default function AddProblemForm({ courseNum, lessonId }) {
     steps: [],
     images: []
   });
+
+  const [showPopup, setShowPopup] = useState(false);
+  const togglePopup = () => setShowPopup(prev => !prev);
 
   const classes = useStyles();
 
@@ -855,13 +862,19 @@ export default function AddProblemForm({ courseNum, lessonId }) {
   return (
     <Container maxWidth="md" className={classes.page}>
       <Paper className={classes.rootPaper} elevation={2}>
-        <Box className={classes.header}>
-          <Typography variant="h4" gutterBottom>
-            Add New Problem
-          </Typography>
-          <Typography variant="subtitle1" color="textSecondary">
-            Course <b>{courseName}</b> · Lesson <b>{lessonName}</b>
-          </Typography>
+        <Box className={classes.header} display="flex" alignItems="flex-start" justifyContent="space-between">
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              Add New Problem
+            </Typography>
+            <Typography variant="subtitle1" color="textSecondary">
+              Course <b>{courseName}</b> · Lesson <b>{lessonName}</b>
+            </Typography>
+          </Box>
+
+          <IconButton aria-label="Add problem guide" onClick={togglePopup}>
+            <HelpOutlineOutlinedIcon />
+          </IconButton>
         </Box>
 
         <Divider />
@@ -1081,7 +1094,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                               displayEmpty
                             >
                               <MenuItem value="">
-                                <em>Select answer</em>
+                                <em>Select answer to go in this order</em>
                               </MenuItem>
 
                               {stepDragDropOptions.map(opt => (
@@ -1369,6 +1382,9 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           </Button>
         </Box>
       </form>
+      <Popup isOpen={showPopup} onClose={togglePopup}>
+        <AddProblemGuide />
+      </Popup>
       </Paper>
     </Container>
   );

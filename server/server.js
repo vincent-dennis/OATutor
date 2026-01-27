@@ -93,7 +93,7 @@ app.post("/api/problems", async (req, res) => {
 
 
         // Validate step problemType and answerType, skills
-        const validProblemTypes = ["TextBox", "Code", "MultipleChoice", "DragDrop", "FillBlanks"];
+        const validProblemTypes = ["TextBox", "Code", "MultipleChoice", "DragDrop"];
         const validAnswerTypes = ["string", "arithmetic", "numeric"];
         for (const step of steps) {
             // 1. Check problemType
