@@ -67,8 +67,14 @@ math-field::part(menu-toggle) {
     box-shadow: 0 6px 18px rgba(0,0,0,0.18);
 }
 
+/* Force default cursor for the entire DragDrop region */
+.dragdrop-wrapper,
+.dragdrop-wrapper * {
+    cursor: default !important;
+}
+
 .dragdrop-handle {
-    cursor: grab;
+    cursor: default !important;
     user-select: none;
     padding-right: 10px;
     opacity: 0.75;
@@ -79,4 +85,21 @@ math-field::part(menu-toggle) {
 .dragdrop-text {
     flex: 1;
     overflow-wrap: anywhere;
+}
+
+.dragdrop-pre {
+  margin: 0;
+  font-family: inherit;
+  white-space: pre-wrap;
+}
+
+.dragdrop-item,
+.dragdrop-item * {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+body[style*="cursor: grabbing"],
+body[style*="cursor: grab"] {
+    cursor: default !important;
 }
