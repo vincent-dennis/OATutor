@@ -255,8 +255,10 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       if (field === "problemType") {
         updated[index][field] = value;
 
-        // answerType only applies to TextBox; default to "string" otherwise
-        if (value !== "TextBox") {
+        // answerType applies to TextBox; DragDrop must be "DragDrop"; other non-TextBox default to "string"
+        if (value === "DragDrop") {
+          updated[index].answerType = "DragDrop";
+        } else if (value !== "TextBox") {
           updated[index].answerType = "string";
         } else if (!updated[index].answerType || !answerTypes.includes(updated[index].answerType)) {
           updated[index].answerType = "string";
@@ -294,9 +296,9 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
       updated[index][field] = value;
 
-      // answerType is fixed to "string" unless problemType is TextBox
+      // answerType is fixed unless problemType is TextBox; DragDrop must be "DragDrop"
       if (field === "answerType" && updated[index].problemType !== "TextBox") {
-        updated[index].answerType = "string";
+        updated[index].answerType = updated[index].problemType === "DragDrop" ? "DragDrop" : "string";
       }
       return { ...prev, steps: updated };
     });
@@ -489,8 +491,10 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       if (hint.type === "scaffold" && field === "problemType") {
         hint[field] = value;
 
-        // answerType only applies to TextBox; default to "string" otherwise
-        if (value !== "TextBox") {
+        // answerType applies to TextBox; DragDrop must be "DragDrop"; other non-TextBox default to "string"
+        if (value === "DragDrop") {
+          hint.answerType = "DragDrop";
+        } else if (value !== "TextBox") {
           hint.answerType = "string";
         } else if (!hint.answerType || !answerTypes.includes(hint.answerType)) {
           hint.answerType = "string";
@@ -525,7 +529,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
       }
 
       if (hint.type === "scaffold" && field === "answerType" && hint.problemType !== "TextBox") {
-        hint.answerType = "string";
+        hint.answerType = hint.problemType === "DragDrop" ? "DragDrop" : "string";
         return { ...prev, steps: updated };
       }
 
@@ -863,8 +867,10 @@ export default function AddProblemForm({ courseNum, lessonId }) {
           rest.stepAnswer = ans.length ? ans : [""];
         }
 
-        // answerType only applies to TextBox; default to "string" otherwise
-        if (rest.problemType !== "TextBox") {
+        // answerType only applies to TextBox; DragDrop must be "DragDrop"; default to "string" otherwise
+        if (rest.problemType === "DragDrop") {
+          rest.answerType = "DragDrop";
+        } else if (rest.problemType !== "TextBox") {
           rest.answerType = "string";
         } else if (!rest.answerType || !answerTypes.includes(rest.answerType)) {
           rest.answerType = "string";
@@ -882,12 +888,15 @@ export default function AddProblemForm({ courseNum, lessonId }) {
 
               return {
                 ...h,
-                answerType: "string",
+                answerType: "DragDrop",
                 choices: ch.length ? ch : [""],
                 hintAnswer: ans.length ? ans : [""]
               };
             }
             if (h && h.type === "scaffold") {
+              if (h.problemType === "DragDrop") {
+                return { ...h, answerType: "DragDrop" };
+              }
               if (h.problemType !== "TextBox") {
                 return { ...h, answerType: "string" };
               }

@@ -34,6 +34,21 @@ function _parseEquality(attempt, actual) {
     return actual.filter(stepAns => KAS.compare(attempt, stepAns).equal);
 }
 
+function _orderedListEquality(attemptList, actualList) {
+    if (!Array.isArray(attemptList) || !Array.isArray(actualList)) return false;
+    if (attemptList.length !== actualList.length) return false;
+
+    const norm = (v) => {
+        if (typeof v === "string") return v.replace(/\r\n/g, "\n");
+        return String(v);
+    };
+
+    for (let i = 0; i < attemptList.length; i++) {
+        if (norm(attemptList[i]) !== norm(actualList[i])) return false;
+    }
+    return true;
+}
+
 // Round to precision number of decimal places
 function round(num, precision) {
     if (precision != null) {
@@ -101,6 +116,22 @@ function convertSwedishToUS(numberString) {
  * @returns {[string, boolean | string, null | WrongAnswerReasons]}
  */
 function checkAnswer({ attempt, actual, answerType, precision = 5, variabilization = {}, questionText = ""}) {
+    if (answerType === "DragDrop") {
+        if (!Array.isArray(attempt) || !Array.isArray(actual) || attempt.length === 0) {
+            return [attempt, false, WrongAnswerReasons.wrong];
+        }
+
+        if (variabilization) {
+            actual = actual.map((actualAns) => variabilize(actualAns, variabilization));
+        }
+
+        if (_orderedListEquality(attempt, actual)) {
+            return [attempt, actual, null];
+        }
+
+        return [attempt, false, WrongAnswerReasons.wrong];
+    }
+
     if (localStorage.getItem('locale') == 'se') {
         attempt = convertSwedishToUS(attempt)
     }
