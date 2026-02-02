@@ -129,8 +129,10 @@ class ProblemCard extends React.Component {
             });
         }
 
+        const initialInputVal = this.step.answerType === "DragDrop" ? [] : "";
+
         this.state = {
-            inputVal: "",
+            inputVal: initialInputVal,
             isCorrect: context.use_expanded_view && context.debug ? true : null,
             checkMarkOpacity:
                 context.use_expanded_view && context.debug ? "100" : "0",
@@ -164,8 +166,13 @@ class ProblemCard extends React.Component {
         }
     }
 
+    serializeAttempt = (val) => {
+        if (Array.isArray(val)) return val.join("\n");
+        return val ?? "";
+    };
+
     hashAnswer = (answer) => {
-        return CryptoJS.SHA256(answer).toString();
+        return CryptoJS.SHA256(this.serializeAttempt(answer)).toString();
     };
 
     _findHintId = (hints, targetId) => {
@@ -237,8 +244,12 @@ class ProblemCard extends React.Component {
         const { seed, problemVars, problemID, courseName, answerMade, lesson } =
             this.props;
 
-        if (inputVal == '') {
-            toastNotifyEmpty(this.translate)
+        const isEmptyAttempt = Array.isArray(inputVal)
+            ? inputVal.length === 0
+            : inputVal === "";
+
+        if (isEmptyAttempt) {
+            toastNotifyEmpty(this.translate);
             return;
         }
 
@@ -420,8 +431,10 @@ class ProblemCard extends React.Component {
     };
 
     generateGPTHintParameters = (prompt_template, bio_info) => {
-        let inputVal = this.state.inputVal || "The student did not provide an answer.";
-        let correctAnswer = Array.isArray(this.step.stepAnswer) ? this.step.stepAnswer[0] : "";
+        let inputVal = this.serializeAttempt(this.state.inputVal) || "The student did not provide an answer.";
+        let correctAnswer = Array.isArray(this.step.stepAnswer)
+            ? this.step.stepAnswer.join("\n")
+            : (this.step.stepAnswer || "");
         const problemTitle = this.problemTitle || "Problem Title";
         const problemSubTitle = this.problemSubTitle || "Problem Subtitle";
         const questionTitle = this.step.stepTitle || "Question Title";

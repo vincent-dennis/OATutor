@@ -15,9 +15,12 @@ import { EQUATION_EDITOR_AUTO_COMMANDS, EQUATION_EDITOR_AUTO_OPERATORS, ThemeCon
 import { stagingProp } from "../../util/addStagingProperty";
 import { parseMatrixTex } from "../../util/parseMatrixTex";
 import pyodideRunner from "../../util/pyodideRunner";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 class ProblemInput extends React.Component {
     static contextType = ThemeContext;
+    _prevDragDropStep = null;
+    _prevDragDropSeed = null;
 
     constructor(props) {
         super(props);
@@ -31,7 +34,8 @@ class ProblemInput extends React.Component {
         this.state = {
             value: "",
             isMathFieldFocused: false,
-            pyodideLoaded: false
+            pyodideLoaded: false,
+            dragDropItems: []
         };
     }
 
@@ -59,6 +63,10 @@ class ProblemInput extends React.Component {
         if (textareaEl != null) {
             textareaEl.ariaLabel = `Answer question number ${this.props.index} here`
         }
+
+        if (this.props.step.problemType === "DragDrop") {
+            this.initializeDragDrop();
+        }
     }
 
     componentDidUpdate(_, prevState) {
@@ -68,6 +76,14 @@ class ProblemInput extends React.Component {
             mathField.executeCommand('hideVirtualKeyboard');
             console.log("componentDidUpdate hide keyboard")
         }}
+        if (
+            this.props.step.problemType === "DragDrop" &&
+            (this.props.step !== this._prevDragDropStep || this.props.seed !== this._prevDragDropSeed)
+        ) {
+            this._prevDragDropStep = this.props.step;
+            this._prevDragDropSeed = this.props.seed;
+            this.initializeDragDrop();
+        }
     }
     
     componentWillUnmount() {
@@ -129,6 +145,62 @@ class ProblemInput extends React.Component {
         }
         this.props.setInputValState(eq)
     }
+
+    reorderList = (list, startIndex, endIndex) => {
+        const result = Array.from(list);
+        const [removed] = result.splice(startIndex, 1);
+        result.splice(endIndex, 0, removed);
+        return result;
+    };
+
+    initializeDragDrop = () => {
+        const { step, seed, state } = this.props;
+
+        const choices = Array.isArray(step?.choices) ? step.choices : [];
+        const baseItems = choices.map((text, i) => ({ id: `dd-${i}`, text }));
+
+        const existingAttempt = state?.inputVal;
+
+        // If parent already has an attempt array, reconstruct stable ids by matching text (supports duplicates)
+        if (Array.isArray(existingAttempt) && existingAttempt.length > 0) {
+            const buckets = new Map();
+            baseItems.forEach((item) => {
+                const key = item.text;
+                if (!buckets.has(key)) buckets.set(key, []);
+                buckets.get(key).push(item);
+            });
+
+            const ordered = [];
+            existingAttempt.forEach((text) => {
+                const bucket = buckets.get(text);
+                if (bucket && bucket.length > 0) ordered.push(bucket.shift());
+            });
+
+            const usedIds = new Set(ordered.map((it) => it.id));
+            baseItems.forEach((it) => {
+                if (!usedIds.has(it.id)) ordered.push(it);
+            });
+
+            this.setState({ dragDropItems: ordered });
+            this.props.setInputValState(ordered.map((it) => it.text));
+            return;
+        }
+
+        // Otherwise start shuffled (stable per seed)
+        const shuffled = shuffleArray(baseItems, seed);
+        this.setState({ dragDropItems: shuffled });
+        this.props.setInputValState(shuffled.map((it) => it.text));
+    };
+    
+    onDragDropEnd = (result) => {
+        const { destination, source } = result || {};
+        if (!destination) return;
+        if (destination.index === source.index) return;
+
+        const reordered = this.reorderList(this.state.dragDropItems, source.index, destination.index);
+        this.setState({ dragDropItems: reordered });
+        this.props.setInputValState(reordered.map((it) => it.text));
+    };
 
     render() {
         const { classes, state, index, showCorrectness, allowRetry, variabilization } = this.props;
@@ -294,6 +366,49 @@ class ProblemInput extends React.Component {
                             } : {}}
                             variabilization={variabilization}
                         />
+                    )}
+                    {problemType === "DragDrop" && (
+                        <div className="dragdrop-wrapper">
+                            <DragDropContext onDragEnd={this.onDragDropEnd}>
+                                <Droppable droppableId={`dragdrop-${index}`}>
+                                    {(provided) => (
+                                        <div
+                                            ref={provided.innerRef}
+                                            {...provided.droppableProps}
+                                            className="dragdrop-list"
+                                            aria-label={`Reorder items for question number ${index}`}
+                                        >
+                                            {this.state.dragDropItems.map((item, i) => (
+                                                <Draggable
+                                                    key={item.id}
+                                                    draggableId={item.id}
+                                                    index={i}
+                                                    isDragDisabled={disableInput}
+                                                >
+                                                    {(provided, snapshot) => (
+                                                        <div
+                                                            ref={provided.innerRef}
+                                                            {...provided.draggableProps}
+                                                            {...provided.dragHandleProps}
+                                                            className={clsx(
+                                                                "dragdrop-item",
+                                                                snapshot.isDragging && "dragdrop-item-dragging"
+                                                            )}
+                                                        >
+                                                            <div className="dragdrop-handle" aria-hidden="true">⋮⋮</div>
+                                                            <div className="dragdrop-text">
+                                                                {renderText(item.text, this.context.problemID, variabilization, this.context)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </Draggable>
+                                            ))}
+                                            {provided.placeholder}
+                                        </div>
+                                    )}
+                                </Droppable>
+                            </DragDropContext>
+                        </div>
                     )}
                     {problemType === "GridInput" && (
                         <GridInput

@@ -94,7 +94,7 @@ app.post("/api/problems", async (req, res) => {
 
         // Validate step problemType and answerType, skills
         const validProblemTypes = ["TextBox", "Code", "MultipleChoice", "DragDrop"];
-        const validAnswerTypes = ["string", "arithmetic", "numeric"];
+        const validAnswerTypes = ["string", "arithmetic", "numeric", "DragDrop"];
         for (const step of steps) {
             // 1. Check problemType
             if (!validProblemTypes.includes(step.problemType)) {
@@ -110,11 +110,19 @@ app.post("/api/problems", async (req, res) => {
                 });
             }
 
-            // 3. Enforce special rule: if problemType != "TextBox", answerType must be "string"
-            if (step.problemType !== "TextBox" && step.answerType !== "string") {
-                return res.status(400).json({
-                    error: `Step '${step.id}' has problemType '${step.problemType}' but answerType '${step.answerType}' is not allowed. Only 'string' is allowed for non-TextBox steps.`
-                });
+            // 3. Enforce answerType rules
+            if (step.problemType === "DragDrop") {
+                if (step.answerType !== "DragDrop") {
+                    return res.status(400).json({
+                        error: `Step '${step.id}' has problemType 'DragDrop' but answerType '${step.answerType}' is not allowed. Must be 'DragDrop'.`
+                    });
+                }
+            } else if (step.problemType !== "TextBox") {
+                if (step.answerType !== "string") {
+                    return res.status(400).json({
+                        error: `Step '${step.id}' has problemType '${step.problemType}' but answerType '${step.answerType}' is not allowed. Only 'string' is allowed for non-TextBox and non-DragDrop steps.`
+                    });
+                }
             }
 
             // 4. Check for non-empty skills
@@ -248,6 +256,19 @@ app.post("/api/problems", async (req, res) => {
                 });
             }
 
+            if (step.problemType === "DragDrop") {
+                if (!Array.isArray(stepJsonData.choices) || !Array.isArray(stepJsonData.stepAnswer)) {
+                    return res.status(400).json({
+                        error: `Step '${step.id}' DragDrop requires both 'choices' and 'stepAnswer' arrays.`
+                    });
+                }
+                if (stepJsonData.stepAnswer.length !== stepJsonData.choices.length) {
+                    return res.status(400).json({
+                        error: `Step '${step.id}' DragDrop requires stepAnswer length (${stepJsonData.stepAnswer.length}) to match choices length (${stepJsonData.choices.length}).`
+                    });
+                }
+            }
+
             fs.writeFileSync(stepJsonPath, JSON.stringify(stepJsonData, null, 4));
             console.log("  Created step JSON:", stepJsonPath);
 
@@ -277,11 +298,19 @@ app.post("/api/problems", async (req, res) => {
                         });
                     }
 
-                    // 3. Enforce special rule: if problemType != "TextBox", answerType must be "string"
-                    if (hint.problemType !== "TextBox" && hint.answerType !== "string") {
-                        return res.status(400).json({
-                            error: `Hint '${hintId}' has problemType '${hint.problemType}' but answerType '${hint.answerType}' is not allowed. Only 'string' is allowed for non-TextBox scaffolds.`
-                        });
+                    // 3. Enforce answerType rules
+                    if (hint.problemType === "DragDrop") {
+                        if (hint.answerType !== "DragDrop") {
+                            return res.status(400).json({
+                                error: `Hint '${hintId}' has problemType 'DragDrop' but answerType '${hint.answerType}' is not allowed. Must be 'DragDrop'.`
+                            });
+                        }
+                    } else if (hint.problemType !== "TextBox") {
+                        if (hint.answerType !== "string") {
+                            return res.status(400).json({
+                                error: `Hint '${hintId}' has problemType '${hint.problemType}' but answerType '${hint.answerType}' is not allowed. Only 'string' is allowed for non-TextBox (non-DragDrop) scaffolds.`
+                            });
+                        }
                     }
 
                     // Scaffold hint format
@@ -307,6 +336,19 @@ app.post("/api/problems", async (req, res) => {
                         return res.status(400).json({
                             error: `Hint '${hintId}' has problemType '${hint.problemType}' but no choices given.`,
                         });
+                    }
+
+                    if (hint.problemType === "DragDrop") {
+                        if (!Array.isArray(hintData.choices) || !Array.isArray(hintData.hintAnswer)) {
+                            return res.status(400).json({
+                                error: `Hint '${hintId}' DragDrop requires both 'choices' and 'hintAnswer' arrays.`
+                            });
+                        }
+                        if (hintData.hintAnswer.length !== hintData.choices.length) {
+                            return res.status(400).json({
+                                error: `Hint '${hintId}' DragDrop requires hintAnswer length (${hintData.hintAnswer.length}) to match choices length (${hintData.choices.length}).`
+                            });
+                        }
                     }
 
                     return hintData
