@@ -11,13 +11,15 @@ if (IS_DEVELOPMENT) {
 }
 
 // attempt = student answer, actual = [ans1, ans2]
-function _equality(attempt, actual) {
-    const parsedAttempt = attempt.replace(/\s+/g, '').replace(/\\left/g, '').replace(/\\right/g, '');
-    return actual.filter(stepAns => {
-        const parsedStepAns = stepAns.replace(/\s+/g, '').replace(/\\left/g, '').replace(/\\right/g, '');
-        //console.log("parsedAttempt: " + parsedAttempt + " parsedStepAns: " + parsedStepAns);
-        return parsedAttempt === parsedStepAns
-    });
+function _equality(attempt, actual, { stripWhitespace = true } = {}) {
+    const normalize = (s) => {
+        let out = String(s).replace(/\\left/g, '').replace(/\\right/g, '');
+        if (stripWhitespace) out = out.replace(/\s+/g, '');
+        return out;
+    };
+
+    const parsedAttempt = normalize(attempt);
+    return actual.filter(stepAns => normalize(stepAns) === parsedAttempt);
 }
 
 // attempt = student answer, actual = [ans1, ans2]
@@ -100,7 +102,8 @@ function validateAndCorrectFormat(input) {
 }
 
 function convertSwedishToUS(numberString) {
-    let noSpaces = numberString.replace(/\s/g, '');
+    // let noSpaces = numberString.replace(/\s/g, '');
+    let noSpaces = numberString
     let formattedNumber = noSpaces.replace(/(?<=\d),(?=\d)/g, '.');
     return formattedNumber;
 }
@@ -116,6 +119,7 @@ function convertSwedishToUS(numberString) {
  * @returns {[string, boolean | string, null | WrongAnswerReasons]}
  */
 function checkAnswer({ attempt, actual, answerType, precision = 5, variabilization = {}, questionText = ""}) {
+    // console.debug("Answer in checkAnswer: ", attempt);
     if (answerType === "DragDrop") {
         if (!Array.isArray(attempt) || !Array.isArray(actual) || attempt.length === 0) {
             return [attempt, false, WrongAnswerReasons.wrong];
@@ -136,7 +140,9 @@ function checkAnswer({ attempt, actual, answerType, precision = 5, variabilizati
         attempt = convertSwedishToUS(attempt)
     }
     
+    // console.debug("Answer after convertSwedishToUS: ", attempt);
     let parsed = attempt.replace(/\s+/g, '');
+    // console.debug("Answer after parsed = attempt.replace: ", attempt);
     if (variabilization) {
         actual = actual.map((actualAns) => variabilize(actualAns, variabilization));
     }
@@ -207,7 +213,7 @@ function checkAnswer({ attempt, actual, answerType, precision = 5, variabilizati
             parsed = attempt;
             //console.log(parsed);
             //console.log(actual);
-            const correctAnswers = _equality(parsed, actual);
+            const correctAnswers = _equality(parsed, actual, { stripWhitespace: false });
 
             if (correctAnswers.length > 0) {
                 return [parsed, correctAnswers[0], null]

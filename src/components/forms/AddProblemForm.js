@@ -1269,6 +1269,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                         <TextField
                           variant="outlined"
                           required
+                          multiline
                           label={`Answer ${aIdx + 1}`}
                           fullWidth
                           value={ans || ""}
