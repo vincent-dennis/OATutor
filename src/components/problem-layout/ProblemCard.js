@@ -664,7 +664,7 @@ class ProblemCard extends React.Component {
                         <hr />
                     </h2>
 
-                    <div className={classes.stepBody}>
+                    <div className={classes.stepBody} style={{ whiteSpace: "pre-wrap" }}>
                         {renderText(
                             this.step.stepBody,
                             problemID,
