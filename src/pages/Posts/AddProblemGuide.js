@@ -29,7 +29,7 @@ const AddProblemGuide = () => {
                 <li>TextBox: you can have three different answer types: "string", "arithmetic", or "numeric". The submitted answer will be matched with any of the step answers, and if any of them matches, then the answer is deemed correct.</li>
                 <li>Code: with this problem type, the user will be able to write and run their own python code. For the step answer of Code problems, enter the values that the user's code should output, not the code itself. E.g. for the task "If a = 5 and b = 3, what is a*b?", the step answer should be "15", not "print(5*3)". The submitted answer will be matched with any of the step answers, and if any of them matches, then the answer is deemed correct.</li>
                 <li>MultipleChoice: you will be allowed to input a list of choices, and then choose one of them as correct.</li>
-                <li>DragDrop: you can input a list of choices, and the user will be tasked with putting them in the correct order. So for each choice you add, you will have to add also the choice that should be in this place in the order.</li>
+                <li>DragDrop: you can input a list of choices, and the user will be tasked with putting them in the correct order. Next to each added choice, select the choice that should go in this position in the correct ordering.</li>
             </ul>
         </ul>
         
