@@ -95,6 +95,7 @@ class LessonSelection extends React.Component {
         const { translate } = this.props;
         const { classes, courseNum } = this.props;
         const selectionMode = courseNum == null ? "course" : "lesson"
+        const teacherMode = !!this.props.teacherMode;
         const { showPopup } = this.state;
 
         if (selectionMode === "lesson" && courseNum >= this.coursePlans.length) {
@@ -192,6 +193,7 @@ class LessonSelection extends React.Component {
                 color="secondary"
                 className={classes.button}
                 size="small"
+                disabled={!teacherMode}
                 onClick={() => this.props.history.push(`/new/problems/${this.props.courseNum}/${lesson.id}`)}
             >
             Add Problem
@@ -257,6 +259,7 @@ class LessonSelection extends React.Component {
                                             className={classes.button}
                                             style={{ width: "100%" }}
                                             size="small"
+                                            disabled={!teacherMode}
                                             onClick={() => this.props.history.push(`/new/courses`)}
                                         >
                                             Add new course
@@ -267,6 +270,7 @@ class LessonSelection extends React.Component {
                                             className={classes.button}
                                             style={{ width: "100%" }}
                                             size="small"
+                                            disabled={!teacherMode}
                                             onClick={() => this.props.history.push(`/new/lessons/${this.props.courseNum}`)}
                                         >
                                             Add new lesson

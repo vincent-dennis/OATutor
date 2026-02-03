@@ -1458,7 +1458,7 @@ export default function AddProblemForm({ courseNum, lessonId }) {
                               <FormControl fullWidth style={{ marginTop: 8 }}>
                                 <Select
                                   value={_norm(hintAnswers[0] || "")}
-                                  onChange={e => updateHintAnswerAt(i, 0, e.target.value)}
+                                  onChange={e => updateHintAnswerAt(i, h, 0, e.target.value)}
                                   displayEmpty
                                 >
                                   <MenuItem value="">
