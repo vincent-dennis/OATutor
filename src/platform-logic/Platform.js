@@ -1,5 +1,5 @@
 import React from "react";
-import { AppBar, Toolbar } from "@material-ui/core";
+import { AppBar, Toolbar, Switch, FormControlLabel } from "@material-ui/core";
 import Grid from "@material-ui/core/Grid";
 import ProblemWrapper from "@components/problem-layout/ProblemWrapper.js";
 import LessonSelectionWrapper from "@components/problem-layout/LessonSelectionWrapper.js";
@@ -36,7 +36,7 @@ class Platform extends React.Component {
 
     constructor(props, context) {
         super(props);
-        
+        this.toggleTeacherMode = this.toggleTeacherMode.bind(this);
         this.problemIndex = {
             problems: problemPool,
         };
@@ -61,42 +61,19 @@ class Platform extends React.Component {
                 );
             }
         }
-        if (this.props.lessonID == null) {
-            this.state = {
-                currProblem: null,
-                status: "courseSelection",
-                seed: seed,
-            };
-        } else {
-            this.state = {
-                currProblem: null,
-                status: "courseSelection",
-                seed: seed,
-            };
-        }
+        let initialStatus = "courseSelection";
+        if (this.props.addCourse != null) initialStatus = "addCourse";
+        else if (this.props.addLesson != null) initialStatus = "addLesson";
+        else if (this.props.addProblemCourse != null) initialStatus = "addProblem";
+
+        this.state = {
+            currProblem: null,
+            status: initialStatus,
+            seed: seed,
+            teacherMode: false,
+        };
 
         this.selectLesson = this.selectLesson.bind(this);
-        if (this.props.addCourse != null) {
-            this.state = {
-                currProblem: null,
-                status: "addCourse",
-                seed: seed,
-            };
-        }
-        if (this.props.addLesson != null) {
-            this.state = {
-                currProblem: null,
-                status: "addLesson",
-                seed: seed,
-            };
-        }
-        if (this.props.addProblemCourse != null) {
-            this.state = {
-                currProblem: null,
-                status: "addProblem",
-                seed: seed,
-            };
-        }
     }
 
     componentDidMount() {
@@ -432,6 +409,11 @@ class Platform extends React.Component {
         }
     };
 
+    toggleTeacherMode(event) {
+        console.debug("Teacher mode? ", event?.target?.checked);
+        this.setState({ teacherMode: Boolean(event?.target?.checked) });
+    }
+
     render() {
         const { translate } = this.props;
         this.studentNameDisplay = this.context.studentName
@@ -481,22 +463,39 @@ class Platform extends React.Component {
                             <Grid item xs={3} key={3}>
                                 <div
                                     style={{
-                                        textAlign: "right",
+                                        display: "flex",
+                                        justifyContent: "flex-end",
+                                        alignItems: "center",
+                                        gap: "12px",
                                         paddingTop: "3px",
                                     }}
                                 >
-                                    {this.state.status !== "courseSelection" &&
-                                    this.state.status !== "lessonSelection" &&
-                                    this.state.status !== "addCourse" &&
-                                    this.state.status !== "addLesson" &&
-                                    this.state.status !== "addProblem" &&
-                                    (this.lesson.showStuMastery == null ||
-                                        this.lesson.showStuMastery)
-                                        ? this.studentNameDisplay +
-                                        translate('platform.Mastery') +
-                                          Math.round(this.state.mastery * 100) +
-                                          "%"
-                                        : ""}
+                                    <FormControlLabel
+                                        style={{ marginRight: 0 }}
+                                        label="Teacher mode"
+                                        labelPlacement="start"
+                                        control={
+                                            <Switch
+                                                checked={!!this.state.teacherMode}
+                                                onChange={this.toggleTeacherMode}
+                                            />
+                                        }
+                                    />
+
+                                    <span style={{ textAlign: "right" }}>
+                                       {this.state.status !== "courseSelection" &&
+                                        this.state.status !== "lessonSelection" &&
+                                        this.state.status !== "addCourse" &&
+                                        this.state.status !== "addLesson" &&
+                                        this.state.status !== "addProblem" &&
+                                        (this.lesson.showStuMastery == null ||
+                                            this.lesson.showStuMastery)
+                                            ? this.studentNameDisplay +
+                                              translate("platform.Mastery") +
+                                              Math.round(this.state.mastery * 100) +
+                                              "%"
+                                            : ""}
+                                    </span>
                                 </div>
                             </Grid>
                         </Grid>
@@ -508,6 +507,7 @@ class Platform extends React.Component {
                         selectCourse={this.selectCourse}
                         history={this.props.history}
                         removeProgress={this.props.removeProgress}
+                        teacherMode={this.state.teacherMode}
                     />
                 ) : (
                     ""
@@ -518,6 +518,7 @@ class Platform extends React.Component {
                         removeProgress={this.props.removeProgress}
                         history={this.props.history}
                         courseNum={this.props.courseNum}
+                        teacherMode={this.state.teacherMode}
                     />
                 ) : (
                     ""
