@@ -66,11 +66,17 @@ class Platform extends React.Component {
         else if (this.props.addLesson != null) initialStatus = "addLesson";
         else if (this.props.addProblemCourse != null) initialStatus = "addProblem";
 
+        let storedTeacherMode = false;
+        try {
+            storedTeacherMode = localStorage.getItem("teacherMode") === "true";
+        } catch (e) {
+            storedTeacherMode = false;
+        }
         this.state = {
             currProblem: null,
             status: initialStatus,
             seed: seed,
-            teacherMode: false,
+            teacherMode: storedTeacherMode,
         };
 
         this.selectLesson = this.selectLesson.bind(this);
@@ -410,8 +416,14 @@ class Platform extends React.Component {
     };
 
     toggleTeacherMode(event) {
-        console.debug("Teacher mode? ", event?.target?.checked);
-        this.setState({ teacherMode: Boolean(event?.target?.checked) });
+        const next = Boolean(event?.target?.checked);
+        try {
+            localStorage.setItem("teacherMode", next ? "true" : "false");
+        } catch (e) {
+            // ignore storage failures
+        }
+        console.debug("Teacher mode? ", next);
+        this.setState({ teacherMode: next });
     }
 
     render() {

@@ -8,7 +8,7 @@ import {
     AB_TEST_MODE
 } from "./config/config.js";
 
-import { HashRouter as Router, Route, Switch } from "react-router-dom";
+import { HashRouter as Router, Route, Switch, Redirect } from "react-router-dom";
 import NotFound from "@components/NotFound.js";
 
 import {
@@ -433,69 +433,99 @@ class App extends React.Component {
                                     <Route
                                         exact
                                         path="/new/courses"
-                                        render={(props) => (
-                                            <Platform
-                                                key={Date.now()}
-                                                saveProgress={() =>
-                                                    this.saveProgress()
-                                                }
-                                                loadBktProgress={
-                                                    this.loadBktProgress
-                                                }
-                                                removeProgress={
-                                                    this.removeProgress
-                                                }
-                                                addCourse={"1"}
-                                                {...props}
-                                            />
-                                        )}
+                                        render={(props) => {
+                                            const teacherMode =
+                                                (() => {
+                                                    try { return localStorage.getItem("teacherMode") === "true"; }
+                                                    catch (e) { return false; }
+                                                })();
+                                            if (!(teacherMode)) {
+                                                return <Redirect to="/" />;
+                                            }
+                                            return (
+                                                <Platform
+                                                    key={Date.now()}
+                                                    saveProgress={() =>
+                                                        this.saveProgress()
+                                                    }
+                                                    loadBktProgress={
+                                                        this.loadBktProgress
+                                                    }
+                                                    removeProgress={
+                                                        this.removeProgress
+                                                    }
+                                                    addCourse={"1"}
+                                                    {...props}
+                                                />
+                                            )
+                                        }}
                                     />
 
                                     <Route
                                         path="/new/lessons/:courseNum"
-                                        render={(props) => (
-                                            <Platform
-                                                key={Date.now()}
-                                                saveProgress={() =>
-                                                    this.saveProgress()
-                                                }
-                                                loadBktProgress={
-                                                    this.loadBktProgress
-                                                }
-                                                removeProgress={
-                                                    this.removeProgress
-                                                }
-                                                addLesson={
-                                                    props.match.params.courseNum
-                                                }
-                                                {...props}
-                                            />
-                                        )}
+                                        render={(props) => {
+                                            const teacherMode =
+                                                (() => {
+                                                    try { return localStorage.getItem("teacherMode") === "true"; }
+                                                    catch (e) { return false; }
+                                                })();
+                                            if (!(teacherMode)) {
+                                                return <Redirect to="/" />;
+                                            }
+                                            return (
+                                                <Platform
+                                                    key={Date.now()}
+                                                    saveProgress={() =>
+                                                        this.saveProgress()
+                                                    }
+                                                    loadBktProgress={
+                                                        this.loadBktProgress
+                                                    }
+                                                    removeProgress={
+                                                        this.removeProgress
+                                                    }
+                                                    addLesson={
+                                                        props.match.params.courseNum
+                                                    }
+                                                    {...props}
+                                                />
+                                            )
+                                        }}
                                     />
 
                                     <Route
                                         path="/new/problems/:courseNum/:lessonId"
-                                        render={(props) => (
-                                            <Platform
-                                                key={Date.now()}
-                                                saveProgress={() =>
-                                                    this.saveProgress()
-                                                }
-                                                loadBktProgress={
-                                                    this.loadBktProgress
-                                                }
-                                                removeProgress={
-                                                    this.removeProgress
-                                                }
-                                                addProblemCourse={
-                                                    props.match.params.courseNum
-                                                }
-                                                addProblemLesson={
-                                                    props.match.params.lessonId
-                                                }
-                                                {...props}
-                                            />
-                                        )}
+                                        render={(props) => {
+                                            const teacherMode =
+                                                (() => {
+                                                    try { return localStorage.getItem("teacherMode") === "true"; }
+                                                    catch (e) { return false; }
+                                                })();
+                                            if (!(teacherMode)) {
+                                                return <Redirect to="/" />;
+                                            }
+                                            return (
+                                                <Platform
+                                                    key={Date.now()}
+                                                    saveProgress={() =>
+                                                        this.saveProgress()
+                                                    }
+                                                    loadBktProgress={
+                                                        this.loadBktProgress
+                                                    }
+                                                    removeProgress={
+                                                        this.removeProgress
+                                                    }
+                                                    addProblemCourse={
+                                                        props.match.params.courseNum
+                                                    }
+                                                    addProblemLesson={
+                                                        props.match.params.lessonId
+                                                    }
+                                                    {...props}
+                                                />
+                                            )
+                                        }}
                                     />
 
                                     <Route component={NotFound} />
