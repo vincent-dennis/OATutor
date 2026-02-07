@@ -1,0 +1,9 @@
+node_modules
+build
+dist
+.git
+Dockerfile*
+compose*.yml
+npm-debug.log
+yarn-error.log
+.DS_Store

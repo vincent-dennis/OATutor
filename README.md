@@ -35,18 +35,16 @@ git clone --recurse-submodules https://github.com/vincent-dennis/OATutor.git
 cd OATutor
 ```
 
-### Dependencies
-```sh
-npm install
-```
-
-> You may use an alternative package manager such as [yarn](https://yarnpkg.com/) or
-> [pnpm](https://pnpm.io/).
-
-### Local Development Server
+### Normal start
 
 ```sh
 npm run dev
+```
+
+### Docker
+
+```sh
+docker compose up --build
 ```
 
 ## New Features:
