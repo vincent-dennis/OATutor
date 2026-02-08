@@ -77,6 +77,8 @@ Original directory structure and guides can be found in the original project [RE
 
 - `src\platform-logic\checkAnswer.js`: updated logic for DragDrop problem type answer checking, fixed an existing bug with numeric answer type.
 
+- `src\util\pyodideRunner.js`: class that sets up the Python interpreter for free coding problems.
+
 ## Content Sources
 
 - OATutor can support multiple content sources simultaneously, compartmentalizing courses, lessons, and problems of
