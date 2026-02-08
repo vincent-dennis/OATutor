@@ -33,6 +33,7 @@ The installation assumes that you already have Git, Node.js, and npm installed.
 ```sh
 git clone --recurse-submodules https://github.com/vincent-dennis/OATutor.git
 cd OATutor
+npm install
 ```
 
 ### Normal start
