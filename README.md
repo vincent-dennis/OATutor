@@ -42,7 +42,7 @@ npm install
 npm run dev
 ```
 
-### Docker
+### Docker start
 
 ```sh
 docker compose up --build
